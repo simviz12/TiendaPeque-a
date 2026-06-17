@@ -42,7 +42,8 @@ export async function verifyJwtAndGetUser(token?: string) {
     return await prisma.usuario.findUnique({
       where: { id: payload.id },
     });
-  } catch {
+  } catch (error) {
+    console.error("Error in verifyJwtAndGetUser:", error);
     return null;
   }
 }
