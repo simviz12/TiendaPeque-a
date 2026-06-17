@@ -42,17 +42,20 @@ export function SellClient() {
       const response = await fetch("/api/productos");
       const data = (await response.json()) as {
         productos?: Producto[];
+        data?: Producto[];
         message?: string;
       };
 
-      if (!response.ok || !data.productos) {
+      const productList = data.productos || data.data;
+
+      if (!response.ok || !productList) {
         toast.error(data.message ?? "No se pudieron cargar los productos.");
         return;
       }
 
-      setProductos(data.productos);
-      setSelectedCategoryId(data.productos[0]?.categoriaId ?? "");
-      setSelectedProductId(data.productos[0]?.id ?? "");
+      setProductos(productList);
+      setSelectedCategoryId(productList[0]?.categoriaId ?? "");
+      setSelectedProductId(productList[0]?.id ?? "");
     } catch {
       toast.error("No se pudo conectar con el servidor.");
     } finally {
