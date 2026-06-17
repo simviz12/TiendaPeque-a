@@ -1,0 +1,97 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RolUsuario {
+  ADMIN
+  VENDEDOR
+}
+
+enum TipoCategoria {
+  normal
+  sensible
+}
+
+model Usuario {
+  id               String         @id @default(cuid())
+  nombre           String
+  usuario          String         @unique
+  passwordHash     String
+  rol              RolUsuario     @default(VENDEDOR)
+  intentosFallidos Int            @default(0)
+  bloqueadoHasta   DateTime?
+  ventas           Venta[]
+  logsAuditoria    LogAuditoria[]
+  cierresCaja      CierreCaja[]
+
+  @@map("usuarios")
+}
+
+model Categoria {
+  id        String        @id @default(cuid())
+  nombre    String        @unique
+  tipo      TipoCategoria @default(normal)
+  productos Producto[]
+
+  @@map("categorias")
+}
+
+model Producto {
+  id          String    @id @default(cuid())
+  nombre      String    @unique
+  categoriaId String
+  categoria   Categoria @relation(fields: [categoriaId], references: [id])
+  precio      Decimal   @db.Decimal(10, 2)
+  costo       Decimal   @db.Decimal(10, 2)
+  stock       Int       @default(0)
+  esDePaquete Boolean   @default(false)
+  ventas      Venta[]
+
+  @@map("productos")
+}
+
+model Venta {
+  id         String   @id @default(cuid())
+  productoId String
+  producto   Producto @relation(fields: [productoId], references: [id])
+  vendedorId String
+  vendedor   Usuario  @relation(fields: [vendedorId], references: [id])
+  cantidad   Int
+  total      Decimal  @db.Decimal(10, 2)
+  fecha      DateTime @default(now())
+
+  @@map("ventas")
+}
+
+model LogAuditoria {
+  id        String   @id @default(cuid())
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
+  accion    String
+  fecha     DateTime @default(now())
+
+  @@map("logs_auditoria")
+}
+
+model CierreCaja {
+  id                    String   @id @default(cuid())
+  fecha                 DateTime @default(now())
+  totalVentas           Decimal  @db.Decimal(10, 2)
+  totalEfectivoEsperado Decimal  @db.Decimal(10, 2)
+  numeroTransacciones   Int
+  usuarioId             String
+  usuario               Usuario  @relation(fields: [usuarioId], references: [id])
+
+  @@map("cierres_caja")
+}
