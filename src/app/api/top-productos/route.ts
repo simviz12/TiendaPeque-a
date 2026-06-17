@@ -19,18 +19,18 @@ export async function GET(request: Request) {
     return NextResponse.json({ message: 'Parámetros inválidos' }, { status: 400 });
   }
   const limit = params.data.limit ? parseInt(params.data.limit) : 5;
-  
+
   // Calculate current month date range
   const now = new Date();
   const start = new Date(now.getFullYear(), now.getMonth(), 1);
-  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
   try {
     // 1. Group by product for top sold
     const top = await prisma.venta.groupBy({
       by: ['productoId'],
       where: { fecha: { gte: start, lte: end } },
-      _sum: { cantidad: true },
+      _sum: { cantidad: true, total: true },
       orderBy: { _sum: { cantidad: 'desc' } },
       take: limit,
     });
@@ -39,40 +39,43 @@ export async function GET(request: Request) {
     const bottom = await prisma.venta.groupBy({
       by: ['productoId'],
       where: { fecha: { gte: start, lte: end } },
-      _sum: { cantidad: true },
+      _sum: { cantidad: true, total: true },
       orderBy: { _sum: { cantidad: 'asc' } },
       take: limit,
     });
 
-    // Enrich helper
-    const enrich = async (items: { productoId: string; _sum: { cantidad: number | null } }[]) => {
-      return Promise.all(
-        items.map(async (it) => {
-          const prod = await prisma.producto.findUnique({
-            where: { id: it.productoId },
-            include: { categoria: true }
-          });
-          
-          const cantidad = it._sum.cantidad ?? 0;
-          const precioNum = prod ? Number(prod.precio) : 0;
-          const total = precioNum * cantidad;
+    // Obtener todos los productos necesarios en UNA sola query (batch)
+    const allProductoIds = Array.from(
+      new Set([...top.map((i) => i.productoId), ...bottom.map((i) => i.productoId)])
+    );
+    const productos = await prisma.producto.findMany({
+      where: { id: { in: allProductoIds } },
+      include: { categoria: true },
+    });
+    const productoMap = new Map(productos.map((p) => [p.id, p]));
 
-          return {
-            id: it.productoId,
-            nombre: prod?.nombre ?? 'Desconocido',
-            categoria: prod?.categoria?.nombre ?? 'Otros',
-            cantidad: cantidad,
-            total: total,
-            stock: prod?.stock ?? 0,
-          };
-        })
-      );
+    // Enrich helper usando el map en memoria (sin más queries)
+    const enrich = (items: { productoId: string; _sum: { cantidad: number | null; total?: any } }[]) => {
+      return items.map((it) => {
+        const prod = productoMap.get(it.productoId);
+        const cantidad = it._sum.cantidad ?? 0;
+        // Usar el total acumulado de ventas si está disponible
+        const totalVentas = it._sum.total ? Number(it._sum.total) : (prod ? Number(prod.precio) * cantidad : 0);
+
+        return {
+          id: it.productoId,
+          nombre: prod?.nombre ?? 'Desconocido',
+          categoria: prod?.categoria?.nombre ?? 'Otros',
+          cantidad,
+          total: totalVentas,
+          stock: prod?.stock ?? 0,
+        };
+      });
     };
 
-    const masVendidos = await enrich(top);
-    const menosVendidos = await enrich(bottom);
+    const masVendidos = enrich(top);
+    const menosVendidos = enrich(bottom);
 
-    // Return the exact raw structure expected by dashboard-client.tsx
     return NextResponse.json({
       masVendidos,
       menosVendidos

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
+  ResponsiveContainer,
   BarChart,
   Bar,
   XAxis,
@@ -17,12 +18,6 @@ import {
   RadialBarChart,
   RadialBar,
 } from "recharts";
-import dynamic from "next/dynamic";
-
-const ResponsiveContainer = dynamic(
-  () => import("recharts").then((mod) => mod.ResponsiveContainer),
-  { ssr: false }
-);
 import {
   Package,
   ShoppingCart,
@@ -57,7 +52,15 @@ type TopProductos = {
   menosVendidos: { id: string; nombre: string; categoria: string; cantidad: number; total: number; stock: number }[];
 };
 
-const CHART_COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#8b5cf6", "#ec4899", "#64748b"];
+const CHART_COLORS = [
+  "#0ea5e9", // Sky Blue
+  "#8b5cf6", // Violet
+  "#ec4899", // Pink
+  "#f43f5e", // Rose
+  "#f59e0b", // Amber
+  "#10b981", // Emerald
+  "#64748b", // Slate
+];
 
 export function DashboardClient() {
   const [estadisticas, setEstadisticas] = useState<Estadisticas | null>(null);
@@ -65,6 +68,44 @@ export function DashboardClient() {
   const [topProductos, setTopProductos] = useState<TopProductos | null>(null);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+
+  // Chart container refs for width measurement
+  const barChartRef = useRef<HTMLDivElement>(null);
+  const lineChartRef = useRef<HTMLDivElement>(null);
+  const pieChartRef = useRef<HTMLDivElement>(null);
+  const [barWidth, setBarWidth] = useState(0);
+  const [lineWidth, setLineWidth] = useState(0);
+  const [pieWidth, setPieWidth] = useState(0);
+
+  useEffect(() => {
+    const observers: ResizeObserver[] = [];
+    const entries = [
+      { ref: barChartRef, setter: setBarWidth },
+      { ref: lineChartRef, setter: setLineWidth },
+      { ref: pieChartRef, setter: setPieWidth },
+    ];
+    for (const { ref, setter } of entries) {
+      if (!ref.current) continue;
+      setter(ref.current.offsetWidth);
+      const ro = new ResizeObserver(([entry]) => {
+        setter(entry.contentRect.width);
+      });
+      ro.observe(ref.current);
+      observers.push(ro);
+    }
+    return () => observers.forEach((ro) => ro.disconnect());
+  }, [mounted]);
 
   useEffect(() => {
     setMounted(true);
@@ -340,45 +381,52 @@ export function DashboardClient() {
           </div>
 
           {/* Barras: Ventas por Categoría */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2 min-w-0">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm lg:col-span-2 min-w-0">
             <h2 className="text-xl font-extrabold text-slate-800">Ventas por Categoría (Cantidad)</h2>
             <div className="mt-2 h-px bg-slate-100" />
 
-            <div className="relative mt-6 h-72 w-full">
+            <div className="mt-4 w-full h-56 sm:h-72">
               {ventasPorCategoria.length > 0 ? (
-                <div className="absolute inset-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={ventasPorCategoria}
-                      margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                      <XAxis
-                        dataKey="categoria"
-                        stroke="#94a3b8"
-                        fontSize={11}
-                        fontWeight="bold"
-                        tickLine={false}
-                      />
-                      <YAxis stroke="#94a3b8" fontSize={11} fontWeight="bold" tickLine={false} />
-                      <Tooltip
-                        contentStyle={{ background: "#0f172a", border: "none", borderRadius: "12px", color: "#fff" }}
-                        itemStyle={{ color: "#34d399", fontWeight: "bold" }}
-                        labelStyle={{ color: "#94a3b8", fontWeight: "bold" }}
-                      />
-                      <Legend wrapperStyle={{ fontSize: 12, fontWeight: "bold", paddingTop: 10 }} />
-                      <Bar
-                        dataKey="cantidad"
-                        name="Cantidad Vendida"
-                        fill="#059669"
-                        radius={[4, 4, 0, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={ventasPorCategoria}
+                    margin={{ top: 10, right: 10, left: isMobile ? -30 : -20, bottom: 20 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis
+                      dataKey="categoria"
+                      stroke="#94a3b8"
+                      fontSize={isMobile ? 9 : 11}
+                      fontWeight="bold"
+                      tickLine={false}
+                      angle={isMobile ? -45 : -25}
+                      textAnchor="end"
+                      interval={0}
+                    />
+                    <YAxis 
+                      stroke="#94a3b8" 
+                      fontSize={11} 
+                      fontWeight="bold" 
+                      tickLine={false}
+                      width={isMobile ? 35 : 50}
+                      tickFormatter={(val) => isMobile ? `${val}` : val.toLocaleString()}
+                    />
+                    <Tooltip
+                      contentStyle={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "12px", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)" }}
+                      itemStyle={{ color: "#059669", fontWeight: "black" }}
+                      labelStyle={{ color: "#64748b", fontWeight: "bold" }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: isMobile ? 10 : 12, fontWeight: "bold", paddingTop: 10 }} />
+                    <Bar
+                      dataKey="cantidad"
+                      name="Cantidad Vendida"
+                      fill="#059669"
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
               ) : (
                 <div className="flex h-full items-center justify-center text-slate-400">
-                  Sin ventas registradas este mes.
+                  Sin ventas registradas.
                 </div>
               )}
             </div>
@@ -386,49 +434,68 @@ export function DashboardClient() {
         </section>
 
         {/* Segunda Fila: Tendencia de Ventas (Últimos 30 días) */}
-        <section className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm w-full min-w-0">
+        <section className="mb-8 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm w-full min-w-0">
           <h2 className="text-xl font-extrabold text-slate-800">Tendencia de Ventas (Últimos 30 días)</h2>
           <div className="mt-2 h-px bg-slate-100" />
 
-          <div className="relative mt-6 h-80 w-full">
+          <div className="mt-4 w-full h-56 sm:h-80">
             {ventasPorDia.length > 0 ? (
-              <div className="absolute inset-0">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={ventasPorDia}
-                    margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis
-                      dataKey="fecha"
-                      stroke="#94a3b8"
-                      fontSize={11}
-                      fontWeight="bold"
-                      tickLine={false}
-                      tickFormatter={(tick) => (tick && typeof tick === "string" ? tick.slice(5) : "")} // mostrar solo mm-dd
-                    />
-                    <YAxis stroke="#94a3b8" fontSize={11} fontWeight="bold" tickLine={false} />
-                    <Tooltip
-                      contentStyle={{ background: "#0f172a", border: "none", borderRadius: "12px", color: "#fff" }}
-                      itemStyle={{ color: "#60a5fa", fontWeight: "bold" }}
-                      labelStyle={{ color: "#94a3b8", fontWeight: "bold" }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: 12, fontWeight: "bold", paddingTop: 10 }} />
-                    <Line
-                      type="monotone"
-                      dataKey="total"
-                      name="Ingresos Diarios"
-                      stroke="#2563eb"
-                      strokeWidth={3}
-                      dot={{ r: 4, strokeWidth: 2 }}
-                      activeDot={{ r: 6 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={ventasPorDia}
+                  margin={{ top: 10, right: 10, left: isMobile ? -25 : -10, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis
+                    dataKey="fecha"
+                    stroke="#94a3b8"
+                    fontSize={10}
+                    fontWeight="bold"
+                    tickLine={false}
+                    interval={isMobile ? 6 : 1}
+                    tickFormatter={(tick) => {
+                      if (tick && typeof tick === "string") {
+                        return tick.slice(5);
+                      }
+                      return "";
+                    }}
+                  />
+                  <YAxis 
+                    stroke="#94a3b8" 
+                    fontSize={10} 
+                    fontWeight="bold" 
+                    tickLine={false}
+                    width={isMobile ? 45 : 65}
+                    tickFormatter={(val) => {
+                      if (val >= 1000000) {
+                        return `${(val / 1000000).toFixed(1)}M`;
+                      } else if (val >= 1000) {
+                        return `${(val / 1000).toFixed(0)}k`;
+                      }
+                      return `${val}`;
+                    }}
+                  />
+                  <Tooltip
+                    contentStyle={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "12px", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)" }}
+                    itemStyle={{ color: "#2563eb", fontWeight: "black" }}
+                    labelStyle={{ color: "#64748b", fontWeight: "bold" }}
+                    formatter={(value) => `$${Number(value).toLocaleString("es-CO")}`}
+                  />
+                  <Legend wrapperStyle={{ fontSize: isMobile ? 10 : 12, fontWeight: "bold", paddingTop: 10 }} />
+                  <Line
+                    type="monotone"
+                    dataKey="total"
+                    name="Ingresos Diarios"
+                    stroke="#2563eb"
+                    strokeWidth={isMobile ? 2 : 3}
+                    dot={isMobile ? false : { r: 4, strokeWidth: 2 }}
+                    activeDot={{ r: 5 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             ) : (
               <div className="flex h-full items-center justify-center text-slate-400">
-                Sin datos de ventas en los últimos 30 días.
+                Sin datos de ventas registrados.
               </div>
             )}
           </div>
@@ -437,42 +504,46 @@ export function DashboardClient() {
         {/* Tercera Fila: Distribución de Ingresos (Pie) + Top Productos */}
         <section className="grid gap-8 lg:grid-cols-3">
           {/* Distribución de Ingresos por Categoría */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col min-w-0">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm flex flex-col min-w-0">
             <h2 className="text-xl font-extrabold text-slate-800">Distribución de Ingresos</h2>
             <p className="text-xs text-slate-500">Proporción por categoría de producto</p>
             <div className="mt-2 h-px bg-slate-100" />
 
-            <div className="relative mt-6 h-64 w-full flex-1">
+            <div className="mt-4 w-full h-56 sm:h-72 flex justify-center">
               {ventasPorCategoria.length > 0 ? (
-                <div className="absolute inset-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={ventasPorCategoria}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={55}
-                        outerRadius={80}
-                        paddingAngle={3}
-                        dataKey="total"
-                        nameKey="categoria"
-                        label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                      >
-                        {ventasPorCategoria.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{ background: "#0f172a", border: "none", borderRadius: "12px", color: "#fff" }}
-                        itemStyle={{ fontWeight: "bold" }}
-                        formatter={(value) => `$${Number(value).toLocaleString()}`}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={ventasPorCategoria}
+                      cx="50%"
+                      cy="45%"
+                      innerRadius={isMobile ? "50%" : "60%"}
+                      outerRadius={isMobile ? "72%" : "85%"}
+                      paddingAngle={4}
+                      dataKey="total"
+                      nameKey="categoria"
+                      stroke="none"
+                    >
+                      {ventasPorCategoria.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "12px", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)" }}
+                      itemStyle={{ fontWeight: "black", color: "#0f172a" }}
+                      formatter={(value) => `$${Number(value).toLocaleString()}`}
+                    />
+                    <Legend 
+                      verticalAlign="bottom" 
+                      height={isMobile ? 48 : 36} 
+                      iconType="circle"
+                      wrapperStyle={{ fontSize: isMobile ? 10 : 12, fontWeight: "500", paddingTop: isMobile ? "10px" : "20px" }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
               ) : (
                 <div className="flex h-full items-center justify-center text-slate-400">
-                  Sin ingresos registrados este mes.
+                  Sin ingresos registrados.
                 </div>
               )}
             </div>
@@ -493,20 +564,20 @@ export function DashboardClient() {
                     <thead className="bg-slate-50 text-slate-500 font-bold uppercase">
                       <tr>
                         <th className="px-4 py-2 rounded-l-lg">Producto</th>
-                        <th className="px-4 py-2">Categoría</th>
+                        <th className="px-4 py-2 hidden sm:table-cell">Categoría</th>
                         <th className="px-4 py-2">Uds. Vendidas</th>
-                        <th className="px-4 py-2">Ingresos</th>
-                        <th className="px-4 py-2 rounded-r-lg text-right">Stock</th>
+                        <th className="px-4 py-2 rounded-r-lg sm:rounded-none">Ingresos</th>
+                        <th className="px-4 py-2 text-right hidden sm:table-cell rounded-r-lg">Stock</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                       {topProductos.masVendidos.map((prod) => (
                         <tr key={prod.id} className="hover:bg-slate-50/50 transition">
                           <td className="px-4 py-2.5 font-bold text-slate-900">{prod.nombre}</td>
-                          <td className="px-4 py-2.5 text-slate-500">{prod.categoria}</td>
+                          <td className="px-4 py-2.5 text-slate-500 hidden sm:table-cell">{prod.categoria}</td>
                           <td className="px-4 py-2.5 text-slate-800 font-black">{prod.cantidad}</td>
                           <td className="px-4 py-2.5 text-emerald-700 font-extrabold">${prod.total.toLocaleString()}</td>
-                          <td className="px-4 py-2.5 text-right font-semibold">
+                          <td className="px-4 py-2.5 text-right font-semibold hidden sm:table-cell">
                             <span className={`px-2 py-0.5 rounded-full text-xs ${prod.stock < 10 ? "bg-red-50 text-red-700" : "bg-slate-100 text-slate-700"}`}>
                               {prod.stock}
                             </span>
@@ -534,20 +605,20 @@ export function DashboardClient() {
                     <thead className="bg-slate-50 text-slate-500 font-bold uppercase">
                       <tr>
                         <th className="px-4 py-2 rounded-l-lg">Producto</th>
-                        <th className="px-4 py-2">Categoría</th>
+                        <th className="px-4 py-2 hidden sm:table-cell">Categoría</th>
                         <th className="px-4 py-2">Uds. Vendidas</th>
-                        <th className="px-4 py-2">Ingresos</th>
-                        <th className="px-4 py-2 rounded-r-lg text-right">Stock</th>
+                        <th className="px-4 py-2 rounded-r-lg sm:rounded-none">Ingresos</th>
+                        <th className="px-4 py-2 text-right hidden sm:table-cell rounded-r-lg">Stock</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                       {topProductos.menosVendidos.map((prod) => (
                         <tr key={prod.id} className="hover:bg-slate-50/50 transition">
                           <td className="px-4 py-2.5 font-bold text-slate-900">{prod.nombre}</td>
-                          <td className="px-4 py-2.5 text-slate-500">{prod.categoria}</td>
+                          <td className="px-4 py-2.5 text-slate-500 hidden sm:table-cell">{prod.categoria}</td>
                           <td className="px-4 py-2.5 text-slate-800">{prod.cantidad}</td>
                           <td className="px-4 py-2.5 text-slate-800">${prod.total.toLocaleString()}</td>
-                          <td className="px-4 py-2.5 text-right font-semibold">
+                          <td className="px-4 py-2.5 text-right font-semibold hidden sm:table-cell">
                             <span className={`px-2 py-0.5 rounded-full text-xs ${prod.stock < 10 ? "bg-red-50 text-red-700" : "bg-slate-100 text-slate-700"}`}>
                               {prod.stock}
                             </span>

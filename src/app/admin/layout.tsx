@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import {
   LayoutDashboard,
@@ -6,15 +9,17 @@ import {
   PackageSearch,
   ScrollText,
   ShoppingBag,
+  Menu,
+  X,
 } from "lucide-react";
 import { LogoutButton } from "@/presentation/components/logout-button";
 
 const navigation = [
-  { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, desc: "Resumen del negocio" },
-  { href: "/admin/inventario", label: "Inventario", icon: PackageSearch, desc: "Productos y precios" },
-  { href: "/admin/ventas", label: "Ventas", icon: ClipboardList, desc: "Historial de ventas" },
-  { href: "/admin/cierre-caja", label: "Cerrar Caja", icon: Calculator, desc: "Caja del día" },
-  { href: "/admin/logs", label: "Logs", icon: ScrollText, desc: "Registro del sistema" },
+  { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, desc: "Resumen" },
+  { href: "/admin/inventario", label: "Inventario", icon: PackageSearch, desc: "Productos" },
+  { href: "/admin/ventas", label: "Ventas", icon: ClipboardList, desc: "Historial" },
+  { href: "/admin/cierre-caja", label: "Caja", icon: Calculator, desc: "Cierre" },
+  { href: "/admin/logs", label: "Logs", icon: ScrollText, desc: "Sistema" },
 ];
 
 export default function AdminLayout({
@@ -22,194 +27,103 @@ export default function AdminLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#f8fafc",
-        fontFamily: "'Inter', 'Segoe UI', Arial, sans-serif",
-        display: "grid",
-        gridTemplateColumns: "300px 1fr",
-      }}
-    >
-      {/* ===== SIDEBAR ===== */}
-      <aside
-        style={{
-          background: "#ffffff",
-          borderRight: "1px solid #e2e8f0",
-          minHeight: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          position: "sticky",
-          top: 0,
-          height: "100vh",
-          overflowY: "auto",
-        }}
-      >
-        {/* Brand */}
-        <div
-          style={{
-            padding: "1.75rem 1.5rem 1.5rem",
-            borderBottom: "1px solid #f1f5f9",
-          }}
+    <div className="flex min-h-screen flex-col bg-slate-50 md:flex-row">
+      
+      {/* ===== HEADER MÓVIL (Solo visible en móviles) ===== */}
+      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 md:hidden shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-md">
+            <ShoppingBag size={20} color="white" strokeWidth={2.5} />
+          </div>
+          <div>
+            <h1 className="text-sm font-black leading-tight text-slate-900">Tienda Casera</h1>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600">Admin</p>
+          </div>
+        </div>
+        <button
+          onClick={() => setMenuOpen(!menuOpen)}
+          className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition"
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "0.875rem" }}>
-            <div
-              style={{
-                width: "52px",
-                height: "52px",
-                borderRadius: "14px",
-                background: "linear-gradient(135deg, #16a34a, #15803d)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-                boxShadow: "0 4px 12px rgba(22,163,74,0.3)",
-              }}
-            >
-              <ShoppingBag size={28} color="white" strokeWidth={2} />
+          {menuOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
+      </header>
+
+      {/* ===== MENÚ DESPLEGABLE MÓVIL ===== */}
+      {menuOpen && (
+        <div className="fixed inset-x-0 top-[65px] z-40 bg-white/95 backdrop-blur-md md:hidden flex flex-col p-6 shadow-lg border-b border-slate-200 max-h-[calc(100vh-65px)] overflow-y-auto">
+          <p className="mb-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Menú Principal</p>
+          <nav className="flex flex-col gap-2">
+            {navigation.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-4 rounded-xl px-4 py-3 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-all active:scale-[0.98]"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-400">
+                  <item.icon size={20} strokeWidth={2.5} />
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-slate-700">{item.label}</div>
+                  <div className="text-xs text-slate-400">{item.desc}</div>
+                </div>
+              </Link>
+            ))}
+          </nav>
+          <div className="border-t border-slate-100 pt-4 mt-4" onClick={() => setMenuOpen(false)}>
+            <LogoutButton />
+          </div>
+        </div>
+      )}
+
+      {/* ===== SIDEBAR DESKTOP (Oculto en móviles) ===== */}
+      <aside className="sticky top-0 hidden h-screen w-[280px] shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
+        {/* Brand */}
+        <div className="border-b border-slate-100 p-6">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-lg shadow-emerald-600/20">
+              <ShoppingBag size={24} color="white" strokeWidth={2.5} />
             </div>
             <div>
-              <p
-                style={{
-                  fontSize: "0.75rem",
-                  fontWeight: 700,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                  color: "#16a34a",
-                  margin: 0,
-                }}
-              >
-                Administrador
-              </p>
-              <h2
-                style={{
-                  fontSize: "1.25rem",
-                  fontWeight: 900,
-                  color: "#0f172a",
-                  margin: 0,
-                  lineHeight: 1.2,
-                }}
-              >
-                Tienda Casera
-              </h2>
+              <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Administrador</p>
+              <h2 className="text-xl font-black leading-tight text-slate-900">Tienda Casera</h2>
             </div>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav
-          style={{
-            flex: 1,
-            padding: "1rem 0.875rem",
-            display: "flex",
-            flexDirection: "column",
-            gap: "0.375rem",
-          }}
-        >
-          <p
-            style={{
-              fontSize: "0.7rem",
-              fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: "0.1em",
-              color: "#94a3b8",
-              padding: "0.25rem 0.625rem 0.5rem",
-              margin: 0,
-            }}
-          >
-            Menú principal
-          </p>
+        <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-4">
+          <p className="mb-2 px-3 text-[10px] font-black uppercase tracking-widest text-slate-400">Menú Principal</p>
           {navigation.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.875rem",
-                padding: "0.875rem 1rem",
-                borderRadius: "12px",
-                textDecoration: "none",
-                color: "#374151",
-                transition: "all 0.15s ease",
-                minHeight: "64px",
-              }}
-              className="nav-link-admin"
+              className="group flex min-h-[60px] items-center gap-4 rounded-xl px-4 py-3 text-slate-600 transition-all hover:bg-emerald-50 hover:text-emerald-700"
             >
-              <div
-                style={{
-                  width: "42px",
-                  height: "42px",
-                  borderRadius: "10px",
-                  background: "#f0fdf4",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                  color: "#16a34a",
-                }}
-              >
-                <item.icon size={22} strokeWidth={2.2} />
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-400 transition-colors group-hover:bg-emerald-100 group-hover:text-emerald-600">
+                <item.icon size={20} strokeWidth={2.5} />
               </div>
               <div>
-                <div
-                  style={{
-                    fontSize: "1rem",
-                    fontWeight: 700,
-                    color: "#1e293b",
-                    lineHeight: 1.2,
-                  }}
-                >
-                  {item.label}
-                </div>
-                <div
-                  style={{
-                    fontSize: "0.8rem",
-                    color: "#64748b",
-                    marginTop: "1px",
-                  }}
-                >
-                  {item.desc}
-                </div>
+                <div className="text-sm font-black leading-tight text-slate-700 group-hover:text-emerald-800">{item.label}</div>
+                <div className="text-xs font-medium text-slate-400">{item.desc}</div>
               </div>
             </Link>
           ))}
         </nav>
 
-        {/* Logout */}
-        <div
-          style={{
-            padding: "1rem 0.875rem 1.5rem",
-            borderTop: "1px solid #f1f5f9",
-          }}
-        >
+        {/* Logout Desktop */}
+        <div className="border-t border-slate-100 p-4">
           <LogoutButton />
         </div>
       </aside>
 
       {/* ===== MAIN CONTENT ===== */}
-      <main style={{ minWidth: 0, minHeight: "100vh" }}>{children}</main>
-
-      <style>{`
-        .nav-link-admin:hover {
-          background: #f0fdf4 !important;
-          color: #16a34a !important;
-        }
-        .nav-link-admin:hover > div:first-child {
-          background: #dcfce7 !important;
-        }
-        @media (max-width: 900px) {
-          div[style*="grid-template-columns: 300px"] {
-            grid-template-columns: 1fr !important;
-          }
-          aside[style*="position: sticky"] {
-            position: relative !important;
-            height: auto !important;
-            min-height: unset !important;
-          }
-        }
-      `}</style>
+      <main className="flex-1 min-w-0">
+        {children}
+      </main>
     </div>
   );
 }

@@ -37,6 +37,7 @@ export function CierreCajaClient({ rol }: Props) {
 
   // Cargar previsualización de hoy
   async function fetchPreview() {
+    setLoadingPreview(true);
     try {
       const response = await fetch("/api/cierre-caja?preview=true");
       if (!response.ok) {
@@ -48,7 +49,6 @@ export function CierreCajaClient({ rol }: Props) {
       console.error(error);
       toast.error("Error al cargar la previsualización del día.");
     } finally {
-      setPreview(null); // default fallback
       setLoadingPreview(false);
     }
   }
@@ -149,9 +149,9 @@ export function CierreCajaClient({ rol }: Props) {
           </p>
         </header>
 
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div className="grid gap-6 lg:grid-cols-3">
           {/* Card Principal de Cierre */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-md lg:col-span-2">
+          <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm transition-all hover:shadow-md lg:col-span-2">
             <h2 className="flex items-center gap-2 text-xl font-extrabold text-slate-800">
               <Calendar className="text-emerald-600" size={20} />
               Corte del Día Actual
@@ -166,14 +166,14 @@ export function CierreCajaClient({ rol }: Props) {
             ) : preview ? (
               <div className="mt-6 space-y-6">
                 {/* Gran Total */}
-                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-800 p-6 text-white shadow-lg shadow-emerald-100">
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-800 p-4 sm:p-6 text-white shadow-lg shadow-emerald-100">
                   <div className="absolute -right-6 -bottom-6 opacity-10">
                     <DollarSign size={160} />
                   </div>
                   <p className="text-sm font-bold uppercase tracking-widest text-emerald-100">
                     Total Efectivo Esperado
                   </p>
-                  <p className="mt-1 text-5xl font-black tracking-tight">
+                  <p className="mt-1 text-3xl sm:text-5xl font-black tracking-tight break-all">
                     ${preview.totalVentas.toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                   <p className="mt-4 text-xs font-semibold text-emerald-100/80">
@@ -249,7 +249,7 @@ export function CierreCajaClient({ rol }: Props) {
           </section>
 
           {/* Panel Lateral Informativo */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm">
             <h3 className="text-lg font-extrabold text-slate-800">Reglas de Cierre</h3>
             <div className="mt-2 h-px bg-slate-100" />
             
@@ -272,7 +272,7 @@ export function CierreCajaClient({ rol }: Props) {
 
         {/* Historial de cierres para Administrador */}
         {rol === "ADMIN" && (
-          <section className="mt-12 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <section className="mt-12 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm">
             <div className="flex items-center gap-2">
               <History className="text-slate-700" size={22} />
               <h2 className="text-xl font-extrabold text-slate-800">Historial de Cierres de Caja</h2>
@@ -289,28 +289,31 @@ export function CierreCajaClient({ rol }: Props) {
                 <table className="w-full border-collapse text-left text-sm text-slate-600">
                   <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500">
                     <tr>
-                      <th className="px-6 py-4 rounded-l-lg">Fecha y Hora</th>
-                      <th className="px-6 py-4">Responsable</th>
-                      <th className="px-6 py-4">Transacciones</th>
-                      <th className="px-6 py-4 rounded-r-lg text-right">Total Ventas</th>
+                      <th className="px-3 sm:px-6 py-3 sm:py-4 rounded-l-lg">Fecha y Hora</th>
+                      <th className="px-3 sm:px-6 py-3 sm:py-4">Responsable</th>
+                      <th className="px-3 sm:px-6 py-3 sm:py-4 hidden sm:table-cell">Transacciones</th>
+                      <th className="px-3 sm:px-6 py-3 sm:py-4 rounded-r-lg text-right">Total Ventas</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {history.map((cierre) => (
                       <tr key={cierre.id} className="hover:bg-slate-50/55 transition">
-                        <td className="px-6 py-4 font-semibold text-slate-900">
-                          {new Date(cierre.fecha).toLocaleString("es-CO")}
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-slate-900">
+                          {new Date(cierre.fecha).toLocaleDateString("es-CO")}
+                          <span className="block text-[10px] font-normal text-slate-400 sm:inline sm:ml-2">
+                            {new Date(cierre.fecha).toLocaleTimeString("es-CO", { hour: '2-digit', minute: '2-digit' })}
+                          </span>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-3 sm:px-6 py-3 sm:py-4">
                           <div className="flex flex-col">
                             <span className="font-medium text-slate-800">{cierre.usuario.nombre}</span>
                             <span className="text-xs text-slate-400 capitalize">{cierre.usuario.rol.toLowerCase()}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 font-medium text-slate-700">
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 font-medium text-slate-700 hidden sm:table-cell">
                           {cierre.numeroTransacciones} ventas
                         </td>
-                        <td className="px-6 py-4 text-right font-black text-slate-950">
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-right font-black text-slate-950">
                           ${cierre.totalVentas.toLocaleString()}
                         </td>
                       </tr>

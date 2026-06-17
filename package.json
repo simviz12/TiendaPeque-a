@@ -4,13 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint && eslint . --ext .js,.jsx,.ts,.tsx",
     "test": "jest",
     "prepare": "husky install",
     "generate": "prisma generate",
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "ts-node prisma/seed.ts",
+    "db:clear": "node prisma/clear-db.js"
   },
   "dependencies": {
     "@headlessui/react": "1.7.18",
@@ -27,7 +28,7 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-hot-toast": "^2.6.0",
-    "recharts": "2.12.7",
+    "recharts": "^2.15.0",
     "tailwindcss": "^4.3.1",
     "zod": "3.23.8"
   },

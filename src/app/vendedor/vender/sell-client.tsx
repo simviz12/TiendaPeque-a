@@ -1,7 +1,18 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Minus, Plus, ShoppingCart } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { 
+  Minus, 
+  Plus, 
+  ShoppingCart, 
+  Tag, 
+  Layers, 
+  CheckCircle2, 
+  ShoppingBag,
+  X,
+  PlusCircle,
+  AlertTriangle
+} from "lucide-react";
 import toast from "react-hot-toast";
 
 type Categoria = {
@@ -30,14 +41,13 @@ function formatCurrency(value: string | number) {
 export function SellClient() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
-  const [selectedProductId, setSelectedProductId] = useState("");
+  const [activeProduct, setActiveProduct] = useState<Producto | null>(null);
   const [cantidad, setCantidad] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
   async function loadProducts() {
     setIsLoading(true);
-
     try {
       const response = await fetch("/api/productos");
       const data = (await response.json()) as {
@@ -54,8 +64,6 @@ export function SellClient() {
       }
 
       setProductos(productList);
-      setSelectedCategoryId(productList[0]?.categoriaId ?? "");
-      setSelectedProductId(productList[0]?.id ?? "");
     } catch {
       toast.error("No se pudo conectar con el servidor.");
     } finally {
@@ -69,15 +77,20 @@ export function SellClient() {
 
   const categorias = useMemo(() => {
     const map = new Map<string, Categoria>();
-
     for (const producto of productos) {
       map.set(producto.categoria.id, producto.categoria);
     }
-
     return Array.from(map.values()).sort((a, b) =>
       a.nombre.localeCompare(b.nombre),
     );
   }, [productos]);
+
+  // Autoseleccionar la primera categoría al cargar
+  useEffect(() => {
+    if (!selectedCategoryId && categorias.length > 0) {
+      setSelectedCategoryId(categorias[0].id);
+    }
+  }, [categorias, selectedCategoryId]);
 
   const filteredProducts = useMemo(() => {
     return productos.filter(
@@ -85,31 +98,26 @@ export function SellClient() {
     );
   }, [productos, selectedCategoryId]);
 
-  const selectedProduct = productos.find(
-    (producto) => producto.id === selectedProductId,
-  );
-  const total = selectedProduct ? Number(selectedProduct.precio) * cantidad : 0;
+  const total = activeProduct ? Number(activeProduct.precio) * cantidad : 0;
 
   function selectCategory(categoryId: string) {
-    const nextProduct = productos.find(
-      (producto) => producto.categoriaId === categoryId,
-    );
-
     setSelectedCategoryId(categoryId);
-    setSelectedProductId(nextProduct?.id ?? "");
+  }
+
+  function openSellModal(producto: Producto) {
+    setActiveProduct(producto);
     setCantidad(1);
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  function closeSellModal() {
+    setActiveProduct(null);
+    setCantidad(1);
+  }
 
-    if (!selectedProduct) {
-      toast.error("Selecciona un producto.");
-      return;
-    }
+  async function handleConfirmarVenta() {
+    if (!activeProduct) return;
 
     setIsSaving(true);
-
     try {
       const response = await fetch("/api/ventas", {
         method: "POST",
@@ -117,7 +125,7 @@ export function SellClient() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          productoId: selectedProduct.id,
+          productoId: activeProduct.id,
           cantidad,
         }),
       });
@@ -128,152 +136,290 @@ export function SellClient() {
         return;
       }
 
-      toast.success("Venta registrada.");
-      setCantidad(1);
+      toast.success(`¡Vendido con éxito!`);
+      closeSellModal();
       await loadProducts();
     } catch {
-      toast.error("No se pudo conectar con el servidor.");
+      toast.error("Error de conexión al guardar la venta.");
     } finally {
       setIsSaving(false);
     }
   }
 
   return (
-    <main className="min-h-screen px-5 py-6">
-      <section className="mx-auto max-w-6xl">
-        <header className="border-b border-slate-200 pb-6">
-          <p className="text-base font-bold uppercase tracking-wide text-emerald-700">
-            Vendedor
-          </p>
-          <h1 className="mt-2 text-4xl font-black">Vender</h1>
-          <p className="mt-3 max-w-2xl text-lg leading-8 text-slate-700">
-            Selecciona categoria, producto y cantidad. El sistema descuenta el
-            inventario automaticamente.
-          </p>
+    <main className="min-h-screen bg-slate-50 px-3 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl">
+        
+        {/* Encabezado con letras grandes y claras */}
+        <header className="mb-6 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs sm:text-sm font-black text-emerald-800">
+              🟢 Caja Abierta
+            </span>
+            <h1 className="mt-1 text-3xl sm:text-4xl font-black tracking-tight text-slate-900">
+              ¿Qué desea llevar el cliente?
+            </h1>
+            <p className="text-sm sm:text-base text-slate-600 font-semibold">
+              Toca una categoría y luego toca el producto para vender al instante.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-2 border border-slate-200 text-sm font-bold text-slate-700 w-fit shrink-0">
+            <ShoppingBag size={18} className="text-emerald-700" />
+            <span>Punto de Venta Casero</span>
+          </div>
         </header>
 
         {isLoading ? (
-          <div className="mt-8 rounded-lg border border-slate-200 bg-white p-6 text-lg font-bold text-slate-700">
-            Cargando productos...
+          <div className="flex min-h-[300px] flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-8">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-emerald-600" />
+            <p className="mt-4 text-lg font-black text-slate-600">
+              Cargando catálogo...
+            </p>
           </div>
         ) : (
-          <form
-            className="mt-8 grid gap-6 lg:grid-cols-[1fr_360px]"
-            onSubmit={handleSubmit}
-          >
-            <div className="space-y-6">
-              <section>
-                <h2 className="text-2xl font-black">Categorias</h2>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  {categorias.map((categoria) => (
+          <div className="space-y-6">
+            
+            {/* 1. Categorías - Botones gigantes y fáciles de presionar */}
+            <section className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <Layers size={20} className="text-emerald-700" />
+                <h2 className="text-lg sm:text-xl font-black text-slate-950">1. Seleccione Categoría</h2>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                {categorias.map((categoria) => {
+                  const isSelected = selectedCategoryId === categoria.id;
+                  return (
                     <button
-                      className={`min-h-16 rounded-lg border px-4 text-left text-lg font-black transition focus:outline-none focus:ring-4 focus:ring-emerald-100 ${
-                        selectedCategoryId === categoria.id
-                          ? "border-emerald-700 bg-emerald-50 text-emerald-900"
-                          : "border-slate-200 bg-white text-slate-800 hover:bg-slate-100"
-                      }`}
                       key={categoria.id}
                       onClick={() => selectCategory(categoria.id)}
                       type="button"
-                    >
-                      {categoria.nombre}
-                    </button>
-                  ))}
-                </div>
-              </section>
-
-              <section>
-                <h2 className="text-2xl font-black">Productos</h2>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  {filteredProducts.map((producto) => (
-                    <button
-                      className={`min-h-28 rounded-lg border p-4 text-left transition focus:outline-none focus:ring-4 focus:ring-emerald-100 ${
-                        selectedProductId === producto.id
-                          ? "border-emerald-700 bg-emerald-50"
-                          : "border-slate-200 bg-white hover:bg-slate-100"
+                      className={`relative flex min-h-[64px] items-center justify-between rounded-xl border px-4 py-3 text-left transition-all duration-150 active:scale-[0.97] ${
+                        isSelected
+                          ? "border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-200"
+                          : "border-slate-300 bg-white text-slate-800 hover:bg-slate-50 hover:border-slate-400"
                       }`}
-                      disabled={producto.stock <= 0}
-                      key={producto.id}
-                      onClick={() => {
-                        setSelectedProductId(producto.id);
-                        setCantidad(1);
-                      }}
-                      type="button"
                     >
-                      <span className="block text-xl font-black">
-                        {producto.nombre}
+                      <span className="text-sm sm:text-base font-black tracking-tight leading-tight break-words whitespace-normal pr-1">
+                        {categoria.nombre}
                       </span>
-                      <span className="mt-2 block text-lg font-bold text-slate-700">
-                        {formatCurrency(producto.precio)}
-                      </span>
-                      <span className="mt-1 block text-base font-bold text-slate-500">
-                        Stock: {producto.stock}
-                      </span>
+                      {isSelected && (
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white text-emerald-600">
+                          <CheckCircle2 size={14} strokeWidth={3} />
+                        </span>
+                      )}
                     </button>
-                  ))}
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* 2. Productos - Tarjetas amplias con precios grandes */}
+            <section className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <Tag size={20} className="text-emerald-700" />
+                <h2 className="text-lg sm:text-xl font-black text-slate-950">2. Toque un Producto para Vender</h2>
+              </div>
+
+              {filteredProducts.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-12 text-center text-slate-500">
+                  <p className="font-black text-lg">No hay productos aquí.</p>
+                  <p className="text-sm mt-1">Selecciona otra categoría en los botones de arriba.</p>
                 </div>
-              </section>
-            </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {filteredProducts.map((producto) => {
+                    const isAgotado = producto.stock <= 0;
+                    const isLowStock = producto.stock > 0 && producto.stock <= 5;
 
-            <aside className="h-fit rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="text-2xl font-black">Resumen</h2>
-              <p className="mt-3 text-lg font-bold text-slate-700">
-                {selectedProduct?.nombre ?? "Sin producto"}
-              </p>
-              <p className="mt-1 text-base text-slate-500">
-                Stock disponible: {selectedProduct?.stock ?? 0}
-              </p>
+                    return (
+                      <button
+                        key={producto.id}
+                        disabled={isAgotado}
+                        onClick={() => openSellModal(producto)}
+                        type="button"
+                        className={`group relative flex flex-col justify-between rounded-2xl border p-5 text-left transition-all duration-200 shadow-sm ${
+                          isAgotado
+                            ? "border-slate-200 bg-slate-100 opacity-50 cursor-not-allowed"
+                            : "border-slate-300 bg-white hover:border-emerald-600 hover:shadow-md hover:bg-emerald-50/10 active:scale-[0.98]"
+                        }`}
+                      >
+                        {/* Estado del stock muy visible */}
+                        <div className="absolute top-4 right-4">
+                          {isAgotado ? (
+                            <span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-black text-red-800">
+                              Agotado
+                            </span>
+                          ) : isLowStock ? (
+                            <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-900 animate-pulse border border-amber-300">
+                              ¡Quedan {producto.stock}!
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
+                              Stock: {producto.stock}
+                            </span>
+                          )}
+                        </div>
 
-              <div className="mt-5">
-                <p className="text-lg font-black">Cantidad</p>
-                <div className="mt-2 grid grid-cols-[56px_1fr_56px] gap-3">
+                        {/* Nombre grande del producto */}
+                        <div className="pr-16 mt-2">
+                          <span className="block text-lg sm:text-xl font-black text-slate-900 leading-tight group-hover:text-emerald-950 transition-colors">
+                            {producto.nombre}
+                          </span>
+                        </div>
+
+                        {/* Precio muy visible en verde */}
+                        <div className="mt-6 flex items-center justify-between w-full border-t border-slate-100 pt-3">
+                          <span className="text-xl font-extrabold text-emerald-700">
+                            {formatCurrency(producto.precio)}
+                          </span>
+                          {!isAgotado && (
+                            <span className="text-xs font-bold text-slate-500 bg-slate-100 rounded-lg px-2.5 py-1 flex items-center gap-1 group-hover:bg-emerald-100 group-hover:text-emerald-800">
+                              <PlusCircle size={14} />
+                              Vender
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          </div>
+        )}
+
+        {/* ===== MODAL DE VENTA DIRECTA (Pensado para 50+ años, sin complicaciones) ===== */}
+        {activeProduct && (
+          <div className="fixed inset-0 bg-slate-900/65 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div 
+              className="bg-white rounded-3xl p-6 shadow-2xl w-full max-w-md border border-slate-200 animate-in fade-in zoom-in-95 duration-150"
+              onClick={(e) => e.stopPropagation()}
+            >
+              
+              {/* Botón cerrar modal */}
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-black text-slate-900">⚡ Registrar Venta</h3>
+                <button
+                  onClick={closeSellModal}
+                  className="p-2 rounded-full bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-600 transition"
+                >
+                  <X size={20} strokeWidth={3} />
+                </button>
+              </div>
+
+              {/* Detalles del producto seleccionados con letras grandes */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 mb-5">
+                <span className="text-xs font-black uppercase tracking-wider text-slate-400">Producto Seleccionado</span>
+                <h4 className="text-2xl font-black text-slate-900 mt-1 leading-tight">{activeProduct.nombre}</h4>
+                <p className="text-sm font-bold text-slate-500 mt-2">
+                  Precio unitario: <span className="text-slate-800">{formatCurrency(activeProduct.precio)}</span>
+                </p>
+                <p className="text-sm font-bold text-slate-500 mt-0.5">
+                  Stock disponible: <span className="text-slate-800">{activeProduct.stock} unidades</span>
+                </p>
+              </div>
+
+              {/* Selector de Cantidad con botones GIGANTES */}
+              <div className="mb-6">
+                <label className="block text-sm font-black text-slate-700 uppercase tracking-wider mb-2 text-center">
+                  ¿Cuántas unidades vendió?
+                </label>
+                
+                <div className="grid grid-cols-[64px_1fr_64px] gap-4 items-center bg-slate-50 p-2 rounded-2xl border border-slate-200">
                   <button
-                    className="flex h-14 items-center justify-center rounded-lg border border-slate-300 transition hover:bg-slate-100"
+                    disabled={cantidad <= 1}
                     onClick={() => setCantidad((current) => Math.max(1, current - 1))}
                     type="button"
+                    className="flex h-14 items-center justify-center rounded-xl bg-white border-2 border-slate-300 text-slate-700 shadow-sm transition hover:bg-slate-100 active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed"
                   >
-                    <Minus aria-hidden="true" size={24} />
+                    <Minus size={26} strokeWidth={3} />
                   </button>
                   <input
-                    className="h-14 rounded-lg border border-slate-300 text-center text-2xl font-black outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                    className="h-14 bg-transparent text-center text-3xl font-black text-slate-900 outline-none w-full border-none focus:ring-0"
                     min="1"
-                    onChange={(event) =>
-                      setCantidad(Math.max(1, Number(event.target.value)))
-                    }
+                    max={activeProduct.stock}
+                    onChange={(event) => {
+                      const val = Math.max(1, Number(event.target.value));
+                      setCantidad(Math.min(activeProduct.stock, val));
+                    }}
                     type="number"
                     value={cantidad}
                   />
                   <button
-                    className="flex h-14 items-center justify-center rounded-lg border border-slate-300 transition hover:bg-slate-100"
-                    onClick={() =>
-                      setCantidad((current) =>
-                        Math.min(selectedProduct?.stock ?? current + 1, current + 1),
-                      )
-                    }
+                    disabled={cantidad >= activeProduct.stock}
+                    onClick={() => setCantidad((current) => Math.min(activeProduct.stock, current + 1))}
                     type="button"
+                    className="flex h-14 items-center justify-center rounded-xl bg-white border-2 border-slate-300 text-slate-700 shadow-sm transition hover:bg-slate-100 active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed"
                   >
-                    <Plus aria-hidden="true" size={24} />
+                    <Plus size={26} strokeWidth={3} />
                   </button>
+                </div>
+
+                {/* BOTONES RÁPIDOS de cantidad (Excelente UX para adultos) */}
+                <div className="mt-3 flex gap-2 justify-center">
+                  {[1, 2, 3, 4, 5].map((num) => (
+                    <button
+                      key={num}
+                      disabled={num > activeProduct.stock}
+                      onClick={() => setCantidad(num)}
+                      type="button"
+                      className={`flex h-10 w-10 items-center justify-center rounded-lg border-2 text-sm font-black transition active:scale-95 ${
+                        cantidad === num
+                          ? "border-emerald-600 bg-emerald-600 text-white shadow-sm"
+                          : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-20"
+                      }`}
+                    >
+                      {num}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              <div className="mt-6 rounded-lg bg-slate-50 p-4">
-                <p className="text-base font-bold text-slate-500">Total</p>
-                <p className="text-3xl font-black">{formatCurrency(total)}</p>
+              {/* Cuadro del Total en color verde vivo */}
+              <div className="rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-800 p-5 text-white shadow-md shadow-emerald-100 mb-6">
+                <p className="text-xs font-bold uppercase tracking-widest text-emerald-100">
+                  Total a cobrar al cliente
+                </p>
+                <p className="mt-1 text-3xl font-black tracking-tight">
+                  {formatCurrency(total)}
+                </p>
               </div>
 
-              <button
-                className="mt-5 flex min-h-14 w-full items-center justify-center gap-3 rounded-lg bg-emerald-700 px-5 text-xl font-black text-white transition hover:bg-emerald-800 focus:outline-none focus:ring-4 focus:ring-emerald-200 disabled:cursor-not-allowed disabled:bg-slate-400"
-                disabled={!selectedProduct || isSaving}
-                type="submit"
-              >
-                <ShoppingCart aria-hidden="true" size={26} />
-                {isSaving ? "Registrando..." : "Registrar venta"}
-              </button>
-            </aside>
-          </form>
+              {/* Botón de Confirmación Gigante */}
+              <div className="space-y-2">
+                <button
+                  disabled={isSaving}
+                  onClick={handleConfirmarVenta}
+                  type="button"
+                  className="flex w-full items-center justify-center gap-3 rounded-2xl bg-slate-900 hover:bg-slate-800 py-4.5 text-lg font-black text-white shadow-lg transition active:scale-[0.97]"
+                >
+                  {isSaving ? (
+                    <>
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                      <span>Guardando venta...</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart size={22} strokeWidth={2.5} />
+                      <span>Confirmar Venta</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={closeSellModal}
+                  type="button"
+                  className="w-full text-center text-slate-500 hover:text-slate-800 py-2 text-sm font-bold"
+                >
+                  Cancelar y volver atrás
+                </button>
+              </div>
+
+            </div>
+          </div>
         )}
-      </section>
+
+      </div>
     </main>
   );
 }

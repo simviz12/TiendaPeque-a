@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/infrastructure/database/prisma";
 import { z } from "zod";
+import { verifyJwtAndGetUser } from "@/infrastructure/auth/session";
 
 const productoSchema = z.object({
   nombre: z.string().min(1),
@@ -14,11 +15,17 @@ const productoSchema = z.object({
 });
 
 export async function GET() {
+  const user = await verifyJwtAndGetUser();
+  if (!user) return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+
   const productos = await prisma.producto.findMany({ include: { categoria: true } });
   return NextResponse.json({ success: true, data: productos });
 }
 
 export async function POST(request: Request) {
+  const user = await verifyJwtAndGetUser();
+  if (!user || user.rol !== "ADMIN") return NextResponse.json({ message: "No autorizado" }, { status: 403 });
+
   const body = await request.json();
   const parsed = productoSchema.safeParse(body);
   if (!parsed.success) {
@@ -43,6 +50,9 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  const user = await verifyJwtAndGetUser();
+  if (!user || user.rol !== "ADMIN") return NextResponse.json({ message: "No autorizado" }, { status: 403 });
+
   const body = await request.json();
   const schema = productoSchema.extend({ id: z.string() });
   const parsed = schema.safeParse(body);
@@ -62,8 +72,19 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const user = await verifyJwtAndGetUser();
+  if (!user || user.rol !== "ADMIN") return NextResponse.json({ message: "No autorizado" }, { status: 403 });
+
   const { id } = await request.json();
   if (!id) return NextResponse.json({ success: false, error: "id requerido" }, { status: 400 });
-  await prisma.producto.delete({ where: { id } });
-  return NextResponse.json({ success: true, data: null });
+  
+  try {
+    await prisma.producto.delete({ where: { id } });
+    return NextResponse.json({ success: true, data: null });
+  } catch (error: any) {
+    if (error.code === 'P2003') {
+      return NextResponse.json({ success: false, error: "No se puede borrar porque el producto ya tiene ventas registradas en el historial. Desactívalo en su lugar." }, { status: 409 });
+    }
+    return NextResponse.json({ success: false, error: "Error interno" }, { status: 500 });
+  }
 }

@@ -71,6 +71,9 @@ model Venta {
   total      Decimal  @db.Decimal(10, 2)
   fecha      DateTime @default(now())
 
+  @@index([fecha])       // filtros por rango de fecha (dashboard, reportes)
+  @@index([productoId])  // agrupaciones por producto (estadísticas, top-productos)
+  @@index([vendedorId])  // filtros por vendedor
   @@map("ventas")
 }
 
@@ -81,6 +84,8 @@ model LogAuditoria {
   accion    String
   fecha     DateTime @default(now())
 
+  @@index([fecha])     // filtros por fecha en la página de logs
+  @@index([usuarioId]) // filtros por usuario en la página de logs
   @@map("logs_auditoria")
 }
 

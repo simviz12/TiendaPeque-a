@@ -62,12 +62,19 @@ export async function POST(request: Request) {
     const result = await prisma.$transaction(async (tx) => {
       const producto = await tx.producto.findUnique({ where: { id: productoId } });
       if (!producto) throw new Error('Producto no encontrado.');
-      if (producto.stock < cantidad) throw new Error('Stock insuficiente para esta venta.');
 
-      await tx.producto.update({
-        where: { id: productoId },
-        data: { stock: producto.stock - cantidad },
+      // Prevenir Race Conditions (Condiciones de carrera) con Decremento Atómico y Filtro GTE
+      const updateResult = await tx.producto.updateMany({
+        where: { 
+          id: productoId, 
+          stock: { gte: cantidad } // Estrictamente asegurar que haya suficiente stock en vivo
+        },
+        data: { stock: { decrement: cantidad } },
       });
+
+      if (updateResult.count === 0) {
+        throw new Error('Stock insuficiente para esta venta o producto inactivo.');
+      }
 
       const venta = await tx.venta.create({
         data: {

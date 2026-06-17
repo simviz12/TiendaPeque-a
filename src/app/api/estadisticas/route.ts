@@ -40,19 +40,24 @@ export async function GET(request: Request) {
       total: Number(totalAggregate._sum.total ?? 0)
     };
 
-    // 2. Ventas por Categoría
+    // 2. Ventas por Categoría — una sola query batch en vez de N+1
     const byCategory = await prisma.venta.groupBy({
       by: ['productoId'],
       where,
       _sum: { total: true, cantidad: true },
     });
 
+    // Obtener todos los productos necesarios en UNA sola query
+    const productoIds = byCategory.map((item) => item.productoId);
+    const productos = await prisma.producto.findMany({
+      where: { id: { in: productoIds } },
+      include: { categoria: true },
+    });
+    const productoMap = new Map(productos.map((p) => [p.id, p]));
+
     const categoryMap = new Map<string, { total: number; cantidad: number }>();
     for (const item of byCategory) {
-      const producto = await prisma.producto.findUnique({
-        where: { id: item.productoId },
-        include: { categoria: true },
-      });
+      const producto = productoMap.get(item.productoId);
       const catName = producto?.categoria?.nombre ?? 'Otros';
       const existing = categoryMap.get(catName) || { total: 0, cantidad: 0 };
       existing.total += Number(item._sum.total ?? 0);
@@ -66,7 +71,7 @@ export async function GET(request: Request) {
       cantidad: stats.cantidad
     }));
 
-    // 3. Ventas por Día (calculado en memoria para compatibilidad de motores DB sin Raw SQL)
+    // 3. Ventas por Día — agrupado en memoria
     const sales = await prisma.venta.findMany({
       where,
       select: {
@@ -86,7 +91,6 @@ export async function GET(request: Request) {
       .map(([fecha, total]) => ({ fecha, total }))
       .sort((a, b) => a.fecha.localeCompare(b.fecha));
 
-    // Return the exact raw structure expected by dashboard-client.tsx
     return NextResponse.json({
       totalesGenerales,
       ventasPorCategoria,

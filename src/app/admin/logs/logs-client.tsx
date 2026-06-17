@@ -211,7 +211,7 @@ export function LogsClient() {
                         {log.usuario.rol}
                       </span>
                     </div>
-                    <p className="mt-0.5 truncate text-sm text-slate-600">{log.accion}</p>
+                    <p className="mt-0.5 break-words text-sm text-slate-600">{log.accion}</p>
                   </div>
                   <time className="shrink-0 text-xs font-semibold text-slate-400">
                     {new Date(log.fecha).toLocaleString("es-CO")}
