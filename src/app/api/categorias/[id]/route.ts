@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { TipoCategoria } from "@/generated/prisma/client";
+import { TipoCategoria } from "@/generated/prisma";
 import { requireAdminUser } from "@/infrastructure/auth/api-session";
 import { prisma } from "@/infrastructure/database/prisma";
 
