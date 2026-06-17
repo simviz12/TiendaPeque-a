@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import {
-  ResponsiveContainer,
   BarChart,
   Bar,
   XAxis,
@@ -18,6 +17,12 @@ import {
   RadialBarChart,
   RadialBar,
 } from "recharts";
+import dynamic from "next/dynamic";
+
+const ResponsiveContainer = dynamic(
+  () => import("recharts").then((mod) => mod.ResponsiveContainer),
+  { ssr: false }
+);
 import {
   Package,
   ShoppingCart,
@@ -339,36 +344,38 @@ export function DashboardClient() {
             <h2 className="text-xl font-extrabold text-slate-800">Ventas por Categoría (Cantidad)</h2>
             <div className="mt-2 h-px bg-slate-100" />
 
-            <div className="mt-6 h-72 w-full min-w-0">
+            <div className="relative mt-6 h-72 w-full">
               {ventasPorCategoria.length > 0 ? (
-                <ResponsiveContainer width="99%" height="100%">
-                  <BarChart
-                    data={ventasPorCategoria}
-                    margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis
-                      dataKey="categoria"
-                      stroke="#94a3b8"
-                      fontSize={11}
-                      fontWeight="bold"
-                      tickLine={false}
-                    />
-                    <YAxis stroke="#94a3b8" fontSize={11} fontWeight="bold" tickLine={false} />
-                    <Tooltip
-                      contentStyle={{ background: "#0f172a", border: "none", borderRadius: "12px", color: "#fff" }}
-                      itemStyle={{ color: "#34d399", fontWeight: "bold" }}
-                      labelStyle={{ color: "#94a3b8", fontWeight: "bold" }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: 12, fontWeight: "bold", paddingTop: 10 }} />
-                    <Bar
-                      dataKey="cantidad"
-                      name="Cantidad Vendida"
-                      fill="#059669"
-                      radius={[4, 4, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
+                <div className="absolute inset-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={ventasPorCategoria}
+                      margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                      <XAxis
+                        dataKey="categoria"
+                        stroke="#94a3b8"
+                        fontSize={11}
+                        fontWeight="bold"
+                        tickLine={false}
+                      />
+                      <YAxis stroke="#94a3b8" fontSize={11} fontWeight="bold" tickLine={false} />
+                      <Tooltip
+                        contentStyle={{ background: "#0f172a", border: "none", borderRadius: "12px", color: "#fff" }}
+                        itemStyle={{ color: "#34d399", fontWeight: "bold" }}
+                        labelStyle={{ color: "#94a3b8", fontWeight: "bold" }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: 12, fontWeight: "bold", paddingTop: 10 }} />
+                      <Bar
+                        dataKey="cantidad"
+                        name="Cantidad Vendida"
+                        fill="#059669"
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               ) : (
                 <div className="flex h-full items-center justify-center text-slate-400">
                   Sin ventas registradas este mes.
@@ -383,40 +390,42 @@ export function DashboardClient() {
           <h2 className="text-xl font-extrabold text-slate-800">Tendencia de Ventas (Últimos 30 días)</h2>
           <div className="mt-2 h-px bg-slate-100" />
 
-          <div className="mt-6 h-80 w-full min-w-0">
+          <div className="relative mt-6 h-80 w-full">
             {ventasPorDia.length > 0 ? (
-              <ResponsiveContainer width="99%" height="100%">
-                <LineChart
-                  data={ventasPorDia}
-                  margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis
-                    dataKey="fecha"
-                    stroke="#94a3b8"
-                    fontSize={11}
-                    fontWeight="bold"
-                    tickLine={false}
-                    tickFormatter={(tick) => tick.slice(5)} // mostrar solo mm-dd
-                  />
-                  <YAxis stroke="#94a3b8" fontSize={11} fontWeight="bold" tickLine={false} />
-                  <Tooltip
-                    contentStyle={{ background: "#0f172a", border: "none", borderRadius: "12px", color: "#fff" }}
-                    itemStyle={{ color: "#60a5fa", fontWeight: "bold" }}
-                    labelStyle={{ color: "#94a3b8", fontWeight: "bold" }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: 12, fontWeight: "bold", paddingTop: 10 }} />
-                  <Line
-                    type="monotone"
-                    dataKey="total"
-                    name="Ingresos Diarios"
-                    stroke="#2563eb"
-                    strokeWidth={3}
-                    dot={{ r: 4, strokeWidth: 2 }}
-                    activeDot={{ r: 6 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              <div className="absolute inset-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={ventasPorDia}
+                    margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis
+                      dataKey="fecha"
+                      stroke="#94a3b8"
+                      fontSize={11}
+                      fontWeight="bold"
+                      tickLine={false}
+                      tickFormatter={(tick) => (tick && typeof tick === "string" ? tick.slice(5) : "")} // mostrar solo mm-dd
+                    />
+                    <YAxis stroke="#94a3b8" fontSize={11} fontWeight="bold" tickLine={false} />
+                    <Tooltip
+                      contentStyle={{ background: "#0f172a", border: "none", borderRadius: "12px", color: "#fff" }}
+                      itemStyle={{ color: "#60a5fa", fontWeight: "bold" }}
+                      labelStyle={{ color: "#94a3b8", fontWeight: "bold" }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 12, fontWeight: "bold", paddingTop: 10 }} />
+                    <Line
+                      type="monotone"
+                      dataKey="total"
+                      name="Ingresos Diarios"
+                      stroke="#2563eb"
+                      strokeWidth={3}
+                      dot={{ r: 4, strokeWidth: 2 }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             ) : (
               <div className="flex h-full items-center justify-center text-slate-400">
                 Sin datos de ventas en los últimos 30 días.
@@ -433,32 +442,34 @@ export function DashboardClient() {
             <p className="text-xs text-slate-500">Proporción por categoría de producto</p>
             <div className="mt-2 h-px bg-slate-100" />
 
-            <div className="mt-6 h-64 w-full min-w-0 flex-1">
+            <div className="relative mt-6 h-64 w-full flex-1">
               {ventasPorCategoria.length > 0 ? (
-                <ResponsiveContainer width="99%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={ventasPorCategoria}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={55}
-                      outerRadius={80}
-                      paddingAngle={3}
-                      dataKey="total"
-                      nameKey="categoria"
-                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                    >
-                      {ventasPorCategoria.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{ background: "#0f172a", border: "none", borderRadius: "12px", color: "#fff" }}
-                      itemStyle={{ fontWeight: "bold" }}
-                      formatter={(value) => `$${Number(value).toLocaleString()}`}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+                <div className="absolute inset-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={ventasPorCategoria}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={55}
+                        outerRadius={80}
+                        paddingAngle={3}
+                        dataKey="total"
+                        nameKey="categoria"
+                        label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                      >
+                        {ventasPorCategoria.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{ background: "#0f172a", border: "none", borderRadius: "12px", color: "#fff" }}
+                        itemStyle={{ fontWeight: "bold" }}
+                        formatter={(value) => `$${Number(value).toLocaleString()}`}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
               ) : (
                 <div className="flex h-full items-center justify-center text-slate-400">
                   Sin ingresos registrados este mes.

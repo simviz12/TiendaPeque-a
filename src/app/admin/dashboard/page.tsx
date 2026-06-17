@@ -1,9 +1,4 @@
-import dynamic from "next/dynamic";
-
-const DashboardClient = dynamic(
-  () => import("./dashboard-client").then((mod) => mod.DashboardClient),
-  { ssr: false }
-);
+import { DashboardClient } from "./dashboard-client";
 
 export const metadata = {
   title: "Dashboard de Administración | Tienda Casera",
