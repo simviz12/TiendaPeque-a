@@ -39,6 +39,9 @@
   "exclude": [
     "node_modules",
     "prisma.config.ts",
-    "prisma/seed.ts"
+    "prisma/seed.ts",
+    "prisma/seed-simple.ts",
+    "prisma/clear-db.ts",
+    "test-stats.mjs"
   ]
 }
