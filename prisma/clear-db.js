@@ -10,11 +10,20 @@ async function main() {
   const cierres = await prisma.cierreCaja.deleteMany({});
   console.log(`✅ Cierres de caja borrados: ${cierres.count}`);
 
+  const fiados = await prisma.fiado.deleteMany({});
+  console.log(`✅ Fiados borrados: ${fiados.count}`);
+
+  const clientes = await prisma.cliente.deleteMany({});
+  console.log(`✅ Clientes borrados: ${clientes.count}`);
+
   const logs = await prisma.logAuditoria.deleteMany({});
   console.log(`✅ Logs de auditoría borrados: ${logs.count}`);
 
   const ventas = await prisma.venta.deleteMany({});
   console.log(`✅ Ventas borradas: ${ventas.count}`);
+
+  const transacciones = await prisma.transaccion.deleteMany({});
+  console.log(`✅ Transacciones borradas: ${transacciones.count}`);
 
   const productos = await prisma.producto.deleteMany({});
   console.log(`✅ Productos borrados: ${productos.count}`);

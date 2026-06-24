@@ -11,6 +11,7 @@ import {
   ShoppingBag,
   Menu,
   X,
+  BookUser,
 } from "lucide-react";
 import { LogoutButton } from "@/presentation/components/logout-button";
 
@@ -18,6 +19,7 @@ const navigation = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, desc: "Resumen" },
   { href: "/admin/inventario", label: "Inventario", icon: PackageSearch, desc: "Productos" },
   { href: "/admin/ventas", label: "Ventas", icon: ClipboardList, desc: "Historial" },
+  { href: "/admin/fiados", label: "Fiados", icon: BookUser, desc: "Créditos" },
   { href: "/admin/cierre-caja", label: "Caja", icon: Calculator, desc: "Cierre" },
   { href: "/admin/logs", label: "Logs", icon: ScrollText, desc: "Sistema" },
 ];
@@ -35,17 +37,17 @@ export default function AdminLayout({
       {/* ===== HEADER MÓVIL (Solo visible en móviles) ===== */}
       <header className="sticky top-0 z-50 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 md:hidden shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-md">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 shadow-md">
             <ShoppingBag size={20} color="white" strokeWidth={2.5} />
           </div>
           <div>
             <h1 className="text-sm font-black leading-tight text-slate-900">Tienda Casera</h1>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600">Admin</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-primary-600">Admin</p>
           </div>
         </div>
         <button
           onClick={() => setMenuOpen(!menuOpen)}
-          className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition"
+          className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition"
         >
           {menuOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
@@ -61,7 +63,7 @@ export default function AdminLayout({
                 key={item.href}
                 href={item.href}
                 onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-4 rounded-xl px-4 py-3 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-all active:scale-[0.98]"
+                className="flex items-center gap-4 rounded-xl px-4 py-3 text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition-all active:scale-[0.98]"
               >
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-400">
                   <item.icon size={20} strokeWidth={2.5} />
@@ -84,11 +86,11 @@ export default function AdminLayout({
         {/* Brand */}
         <div className="border-b border-slate-100 p-6">
           <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-lg shadow-emerald-600/20">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 shadow-lg shadow-primary-600/20">
               <ShoppingBag size={24} color="white" strokeWidth={2.5} />
             </div>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Administrador</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-primary-600">Administrador</p>
               <h2 className="text-xl font-black leading-tight text-slate-900">Tienda Casera</h2>
             </div>
           </div>
@@ -101,13 +103,13 @@ export default function AdminLayout({
             <Link
               key={item.href}
               href={item.href}
-              className="group flex min-h-[60px] items-center gap-4 rounded-xl px-4 py-3 text-slate-600 transition-all hover:bg-emerald-50 hover:text-emerald-700"
+              className="group flex min-h-[60px] items-center gap-4 rounded-xl px-4 py-3 text-slate-600 transition-all hover:bg-primary-50 hover:text-primary-700"
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-400 transition-colors group-hover:bg-emerald-100 group-hover:text-emerald-600">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-400 transition-colors group-hover:bg-primary-100 group-hover:text-primary-600">
                 <item.icon size={20} strokeWidth={2.5} />
               </div>
               <div>
-                <div className="text-sm font-black leading-tight text-slate-700 group-hover:text-emerald-800">{item.label}</div>
+                <div className="text-sm font-black leading-tight text-slate-700 group-hover:text-primary-800">{item.label}</div>
                 <div className="text-xs font-medium text-slate-400">{item.desc}</div>
               </div>
             </Link>

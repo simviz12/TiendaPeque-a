@@ -5,11 +5,21 @@
    Base font: Inter (loaded via layout.tsx)
    ========================================= */
 
+@theme {
+  --color-primary-50: #fff0f3;
+  --color-primary-100: #ffe3e8;
+  --color-primary-200: #fec0cb;
+  --color-primary-300: #f7cad0;
+  --color-primary-400: #f4acb7;
+  --color-primary-500: #e27d8f;
+  --color-primary-600: #cd5a6f;
+  --color-primary-700: #a83a50;
+  --color-primary-800: #883344;
+  --color-primary-900: #6a040f;
+  --color-primary-950: #420208;
+}
+
 :root {
-  --brand-green: #16a34a;
-  --brand-green-dark: #15803d;
-  --brand-green-light: #dcfce7;
-  --brand-green-lighter: #f0fdf4;
 
   --surface: #ffffff;
   --surface-subtle: #f8fafc;

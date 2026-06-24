@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { History, ShoppingCart, Calculator, ShoppingBag, Menu, X } from "lucide-react";
+import { History, ShoppingCart, Calculator, ShoppingBag, Menu, X, BookUser } from "lucide-react";
 import { LogoutButton } from "@/presentation/components/logout-button";
 
 const navigation = [
   { href: "/vendedor/vender", label: "Vender", icon: ShoppingCart, desc: "Nueva Venta" },
+  { href: "/vendedor/fiados", label: "Fiados", icon: BookUser, desc: "Cuentas por cobrar" },
   { href: "/vendedor/historial", label: "Mi Historial", icon: History, desc: "Ventas del día" },
   { href: "/vendedor/cierre-caja", label: "Cerrar Caja", icon: Calculator, desc: "Cierre diario" },
 ];
@@ -27,11 +28,11 @@ export default function VendedorLayout({
           
           {/* Logo & Info */}
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-800 shadow-md shadow-emerald-600/10">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary-600 to-primary-800 shadow-md shadow-primary-600/10">
               <ShoppingBag size={20} color="white" strokeWidth={2.5} />
             </div>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 leading-none mb-1">
+              <p className="text-[10px] font-black uppercase tracking-widest text-primary-600 leading-none mb-1">
                 Punto de Venta
               </p>
               <h2 className="text-base font-black leading-tight text-slate-900">
@@ -46,9 +47,9 @@ export default function VendedorLayout({
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex items-center gap-2.5 rounded-xl px-4 py-2 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition"
+                className="flex items-center gap-2.5 rounded-xl px-4 py-2 text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition"
               >
-                <item.icon size={18} strokeWidth={2.2} className="text-emerald-600" />
+                <item.icon size={18} strokeWidth={2.2} className="text-primary-600" />
                 <div className="flex flex-col text-left">
                   <span className="text-sm font-bold text-slate-800 leading-tight">
                     {item.label}
@@ -69,7 +70,7 @@ export default function VendedorLayout({
           {/* Hamburger Menu Button (Mobile only) */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition md:hidden"
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition md:hidden"
           >
             {menuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
@@ -87,7 +88,7 @@ export default function VendedorLayout({
                 key={item.href}
                 href={item.href}
                 onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-4 rounded-xl px-4 py-3 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-all active:scale-[0.98]"
+                className="flex items-center gap-4 rounded-xl px-4 py-3 text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition-all active:scale-[0.98]"
               >
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-400">
                   <item.icon size={20} strokeWidth={2.5} />

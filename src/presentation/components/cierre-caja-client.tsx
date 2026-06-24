@@ -1,13 +1,28 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Calculator, Calendar, DollarSign, History, ShieldCheck, User } from "lucide-react";
+import {
+  Calculator,
+  Calendar,
+  History,
+  ShieldCheck,
+  User,
+  Banknote,
+  Smartphone,
+  Building2,
+  BookOpen,
+  TrendingUp,
+} from "lucide-react";
 import toast from "react-hot-toast";
 
+// ─── Types ────────────────────────────────────────────────────────────────
 type CierrePreview = {
   fecha: string;
   totalVentas: number;
-  totalEfectivoEsperado: number;
+  totalEfectivo: number;
+  totalNequi: number;
+  totalBancolombia: number;
+  totalFiado: number;
   numeroTransacciones: number;
   usuario: { nombre: string };
 };
@@ -16,18 +31,49 @@ type CierreHistorial = {
   id: string;
   fecha: string;
   totalVentas: number;
-  totalEfectivoEsperado: number;
+  totalEfectivo: number;
+  totalNequi: number;
+  totalBancolombia: number;
+  totalFiado: number;
   numeroTransacciones: number;
-  usuario: {
-    nombre: string;
-    rol: string;
-  };
+  usuario: { nombre: string; rol: string };
 };
 
-type Props = {
-  rol: "ADMIN" | "VENDEDOR";
-};
+type Props = { rol: "ADMIN" | "VENDEDOR" };
 
+// ─── Helpers ──────────────────────────────────────────────────────────────
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat("es-CO", {
+    style: "currency",
+    currency: "COP",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+// Tarjeta de método de pago para el desglose
+function MetodoCard({
+  icon,
+  label,
+  value,
+  colorClass,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  colorClass: string;
+}) {
+  return (
+    <div className={`rounded-2xl border p-4 flex items-center gap-3 ${colorClass}`}>
+      <div className="shrink-0">{icon}</div>
+      <div>
+        <p className="text-xs font-black uppercase tracking-wider opacity-70">{label}</p>
+        <p className="text-xl font-black mt-0.5">{formatCurrency(value)}</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Componente Principal ─────────────────────────────────────────────────
 export function CierreCajaClient({ rol }: Props) {
   const [preview, setPreview] = useState<CierrePreview | null>(null);
   const [history, setHistory] = useState<CierreHistorial[]>([]);
@@ -35,15 +81,12 @@ export function CierreCajaClient({ rol }: Props) {
   const [loadingHistory, setLoadingHistory] = useState(rol === "ADMIN");
   const [submitting, setSubmitting] = useState(false);
 
-  // Cargar previsualización de hoy
   async function fetchPreview() {
     setLoadingPreview(true);
     try {
-      const response = await fetch("/api/cierre-caja?preview=true");
-      if (!response.ok) {
-        throw new Error("No se pudo cargar la previsualización.");
-      }
-      const data = await response.json();
+      const res = await fetch("/api/cierre-caja?preview=true");
+      if (!res.ok) throw new Error("No se pudo cargar la previsualización.");
+      const data = await res.json();
       setPreview(data);
     } catch (error) {
       console.error(error);
@@ -53,14 +96,11 @@ export function CierreCajaClient({ rol }: Props) {
     }
   }
 
-  // Cargar historial si es administrador
   async function fetchHistory() {
     try {
-      const response = await fetch("/api/cierre-caja");
-      if (!response.ok) {
-        throw new Error("No se pudo cargar el historial.");
-      }
-      const data = await response.json();
+      const res = await fetch("/api/cierre-caja");
+      if (!res.ok) throw new Error("No se pudo cargar el historial.");
+      const data = await res.json();
       setHistory(data);
     } catch (error) {
       console.error(error);
@@ -71,72 +111,52 @@ export function CierreCajaClient({ rol }: Props) {
   }
 
   useEffect(() => {
-    // Para la previsualización, obtenemos los datos
-    async function loadInitialData() {
-      try {
-        const resPreview = await fetch("/api/cierre-caja?preview=true");
-        if (resPreview.ok) {
-          const data = await resPreview.json();
-          setPreview(data);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoadingPreview(false);
-      }
-
-      if (rol === "ADMIN") {
-        await fetchHistory();
-      }
+    async function init() {
+      await fetchPreview();
+      if (rol === "ADMIN") await fetchHistory();
     }
-    loadInitialData();
+    void init();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rol]);
 
   async function handleCerrarCaja() {
     if (!preview) return;
-
     const confirmed = window.confirm(
-      `¿Estás seguro de que deseas realizar el cierre de caja por un total de $${preview.totalVentas.toLocaleString()} hoy?`
+      `¿Confirmas el cierre de caja por ${formatCurrency(preview.totalVentas)} del día de hoy?`
     );
     if (!confirmed) return;
 
     setSubmitting(true);
     try {
-      const response = await fetch("/api/cierre-caja", {
-        method: "POST",
-      });
-
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.message || "Error al realizar el cierre.");
+      const res = await fetch("/api/cierre-caja", { method: "POST" });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Error al realizar el cierre.");
       }
-
       toast.success("¡Cierre de caja realizado y guardado con éxito!");
-      
-      // Recargar datos
       await fetchPreview();
-      if (rol === "ADMIN") {
-        await fetchHistory();
-      }
+      if (rol === "ADMIN") await fetchHistory();
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "No se pudo realizar el cierre de caja.";
+      const message = error instanceof Error ? error.message : "No se pudo realizar el cierre.";
       toast.error(message);
     } finally {
       setSubmitting(false);
     }
   }
 
+  // ─── Render ───────────────────────────────────────────────────────────
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-900 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl">
-        {/* Encabezado */}
+
+        {/* Header */}
         <header className="mb-8">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-lg shadow-emerald-200">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-600 text-white shadow-lg shadow-primary-200">
               <Calculator size={24} />
             </div>
             <div>
-              <p className="text-sm font-bold uppercase tracking-wider text-emerald-700">
+              <p className="text-sm font-black uppercase tracking-wider text-primary-700">
                 Operaciones de caja
               </p>
               <h1 className="text-3xl font-black tracking-tight text-slate-900">
@@ -145,79 +165,107 @@ export function CierreCajaClient({ rol }: Props) {
             </div>
           </div>
           <p className="mt-2 text-base text-slate-600">
-            Realiza el corte de caja del día de hoy y genera un snapshot de las ventas y transacciones actuales.
+            Realiza el corte del día y obtén el desglose por método de pago.
           </p>
         </header>
 
         <div className="grid gap-6 lg:grid-cols-3">
-          {/* Card Principal de Cierre */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm transition-all hover:shadow-md lg:col-span-2">
-            <h2 className="flex items-center gap-2 text-xl font-extrabold text-slate-800">
-              <Calendar className="text-emerald-600" size={20} />
+
+          {/* ── Panel Principal ──────────────────────────────────────── */}
+          <section className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+            <h2 className="flex items-center gap-2 text-xl font-extrabold text-slate-800 mb-4">
+              <Calendar className="text-primary-600" size={20} />
               Corte del Día Actual
             </h2>
-            <div className="mt-2 h-px bg-slate-100" />
+            <div className="h-px bg-slate-100 mb-5" />
 
             {loadingPreview ? (
-              <div className="flex flex-col items-center justify-center py-12">
-                <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-emerald-600" />
+              <div className="flex flex-col items-center justify-center py-14">
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-primary-600" />
                 <p className="mt-4 text-sm font-medium text-slate-500">Calculando ventas del día...</p>
               </div>
             ) : preview ? (
-              <div className="mt-6 space-y-6">
+              <div className="space-y-5">
+
                 {/* Gran Total */}
-                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-800 p-4 sm:p-6 text-white shadow-lg shadow-emerald-100">
-                  <div className="absolute -right-6 -bottom-6 opacity-10">
-                    <DollarSign size={160} />
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-600 to-teal-800 p-5 sm:p-6 text-white shadow-lg shadow-primary-100">
+                  <div className="absolute -right-8 -bottom-8 opacity-10">
+                    <TrendingUp size={160} />
                   </div>
-                  <p className="text-sm font-bold uppercase tracking-widest text-emerald-100">
-                    Total Efectivo Esperado
+                  <p className="text-xs font-black uppercase tracking-widest text-primary-100">
+                    Total Vendido Hoy
                   </p>
-                  <p className="mt-1 text-3xl sm:text-5xl font-black tracking-tight break-all">
-                    ${preview.totalVentas.toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  <p className="mt-1 text-4xl sm:text-5xl font-black tracking-tight break-all">
+                    {formatCurrency(preview.totalVentas)}
                   </p>
-                  <p className="mt-4 text-xs font-semibold text-emerald-100/80">
-                    * Calculado en base a {preview.numeroTransacciones} transacciones registradas hoy.
+                  <p className="mt-3 text-xs font-semibold text-primary-100/80">
+                    {preview.numeroTransacciones} transacciones registradas
                   </p>
                 </div>
 
-                {/* Métricas secundarias */}
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 transition hover:bg-slate-100/50">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
-                        <History size={20} />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                          Transacciones
-                        </p>
-                        <p className="text-lg font-black text-slate-800">
-                          {preview.numeroTransacciones} ventas
-                        </p>
-                      </div>
+                {/* Desglose por método de pago */}
+                <div>
+                  <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3">
+                    Desglose por Método de Pago
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <MetodoCard
+                      icon={<Banknote size={22} className="text-emerald-700" />}
+                      label="Efectivo"
+                      value={preview.totalEfectivo}
+                      colorClass="border-emerald-200 bg-emerald-50 text-emerald-900"
+                    />
+                    <MetodoCard
+                      icon={<Smartphone size={22} className="text-purple-700" />}
+                      label="Nequi"
+                      value={preview.totalNequi}
+                      colorClass="border-purple-200 bg-purple-50 text-purple-900"
+                    />
+                    <MetodoCard
+                      icon={<Building2 size={22} className="text-blue-700" />}
+                      label="Bancolombia"
+                      value={preview.totalBancolombia}
+                      colorClass="border-blue-200 bg-blue-50 text-blue-900"
+                    />
+                    <MetodoCard
+                      icon={<BookOpen size={22} className="text-amber-700" />}
+                      label="Fiado"
+                      value={preview.totalFiado}
+                      colorClass="border-amber-200 bg-amber-50 text-amber-900"
+                    />
+                  </div>
+                </div>
+
+                {/* Info del responsable y fecha */}
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-primary-50 flex items-center justify-center text-primary-700">
+                      <History size={20} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-wider text-slate-500">
+                        Transacciones
+                      </p>
+                      <p className="text-lg font-black text-slate-800">
+                        {preview.numeroTransacciones} ventas
+                      </p>
                     </div>
                   </div>
-
-                  <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 transition hover:bg-slate-100/50">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
-                        <User size={20} />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                          Responsable
-                        </p>
-                        <p className="text-lg font-black text-slate-800">
-                          {preview.usuario.nombre}
-                        </p>
-                      </div>
+                  <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-primary-50 flex items-center justify-center text-primary-700">
+                      <User size={20} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-wider text-slate-500">
+                        Responsable
+                      </p>
+                      <p className="text-lg font-black text-slate-800">{preview.usuario.nombre}</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Botón de cierre */}
-                <div className="pt-4">
+                {/* Botón cerrar caja */}
+                <div className="pt-2">
                   <button
                     onClick={handleCerrarCaja}
                     disabled={submitting}
@@ -226,7 +274,7 @@ export function CierreCajaClient({ rol }: Props) {
                     {submitting ? (
                       <>
                         <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-                        <span>Guardando snapshot...</span>
+                        <span>Guardando cierre...</span>
                       </>
                     ) : (
                       <>
@@ -236,48 +284,51 @@ export function CierreCajaClient({ rol }: Props) {
                     )}
                   </button>
                   <p className="mt-2 text-center text-xs text-slate-500">
-                    Esta acción guardará un corte permanente en los logs y la base de datos para auditorías.
+                    Esta acción guarda un snapshot permanente con el desglose por método.
                   </p>
                 </div>
               </div>
             ) : (
-              <div className="mt-6 rounded-xl bg-amber-50 p-4 text-amber-800">
-                <p className="font-semibold">No se encontraron ventas para procesar el día de hoy.</p>
-                <p className="text-sm mt-1">Registra ventas en el módulo del vendedor antes de intentar cerrar la caja.</p>
+              <div className="mt-4 rounded-xl bg-amber-50 border border-amber-200 p-4 text-amber-800">
+                <p className="font-bold">No se encontraron ventas para el día de hoy.</p>
+                <p className="text-sm mt-1">Registra ventas antes de cerrar la caja.</p>
               </div>
             )}
           </section>
 
-          {/* Panel Lateral Informativo */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm">
+          {/* ── Panel Lateral Reglas ──────────────────────────────────── */}
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <h3 className="text-lg font-extrabold text-slate-800">Reglas de Cierre</h3>
-            <div className="mt-2 h-px bg-slate-100" />
-            
-            <ul className="mt-4 space-y-3 text-sm text-slate-600">
+            <div className="h-px bg-slate-100 mt-2 mb-4" />
+            <ul className="space-y-3 text-sm text-slate-600">
               <li className="flex items-start gap-2">
-                <span className="mt-1 flex h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
-                <span>El cierre de caja suma todas las ventas realizadas desde las 00:00 del día de hoy.</span>
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary-500" />
+                <span>Se suman todas las transacciones del día desde las 00:00.</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="mt-1 flex h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
-                <span>Asume que todo el dinero recaudado es en **efectivo**, dado el formato casero del negocio.</span>
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary-500" />
+                <span>El desglose separa Efectivo, Nequi, Bancolombia y Fiado.</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="mt-1 flex h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
-                <span>Tanto vendedores como administradores pueden cerrar caja, pero cada cierre quedará auditado con el usuario responsable.</span>
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary-500" />
+                <span>El dinero fiado NO se cuenta como efectivo recaudado.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary-500" />
+                <span>Cada cierre queda auditado con el responsable que lo realizó.</span>
               </li>
             </ul>
           </section>
         </div>
 
-        {/* Historial de cierres para Administrador */}
+        {/* ── Historial de Cierres (solo ADMIN) ────────────────────────── */}
         {rol === "ADMIN" && (
-          <section className="mt-12 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm">
-            <div className="flex items-center gap-2">
+          <section className="mt-10 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
               <History className="text-slate-700" size={22} />
               <h2 className="text-xl font-extrabold text-slate-800">Historial de Cierres de Caja</h2>
             </div>
-            <div className="mt-2 h-px bg-slate-100" />
+            <div className="h-px bg-slate-100 mb-5" />
 
             {loadingHistory ? (
               <div className="flex flex-col items-center justify-center py-12">
@@ -285,36 +336,49 @@ export function CierreCajaClient({ rol }: Props) {
                 <p className="mt-4 text-sm font-medium text-slate-500">Cargando historial...</p>
               </div>
             ) : history.length > 0 ? (
-              <div className="mt-6 overflow-x-auto">
-                <table className="w-full border-collapse text-left text-sm text-slate-600">
-                  <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500">
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-sm text-slate-600">
+                  <thead className="bg-slate-50 text-xs font-black uppercase tracking-wider text-slate-500">
                     <tr>
-                      <th className="px-3 sm:px-6 py-3 sm:py-4 rounded-l-lg">Fecha y Hora</th>
-                      <th className="px-3 sm:px-6 py-3 sm:py-4">Responsable</th>
-                      <th className="px-3 sm:px-6 py-3 sm:py-4 hidden sm:table-cell">Transacciones</th>
-                      <th className="px-3 sm:px-6 py-3 sm:py-4 rounded-r-lg text-right">Total Ventas</th>
+                      <th className="px-4 py-3 text-left rounded-l-lg">Fecha</th>
+                      <th className="px-4 py-3 text-left">Responsable</th>
+                      <th className="px-4 py-3 text-right hidden sm:table-cell">💵 Efectivo</th>
+                      <th className="px-4 py-3 text-right hidden md:table-cell">📱 Nequi</th>
+                      <th className="px-4 py-3 text-right hidden lg:table-cell">🏦 Bancolombia</th>
+                      <th className="px-4 py-3 text-right hidden md:table-cell">📒 Fiado</th>
+                      <th className="px-4 py-3 text-right rounded-r-lg">Total</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {history.map((cierre) => (
-                      <tr key={cierre.id} className="hover:bg-slate-50/55 transition">
-                        <td className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-slate-900">
+                      <tr key={cierre.id} className="hover:bg-slate-50/60 transition">
+                        <td className="px-4 py-3 font-semibold text-slate-900">
                           {new Date(cierre.fecha).toLocaleDateString("es-CO")}
-                          <span className="block text-[10px] font-normal text-slate-400 sm:inline sm:ml-2">
-                            {new Date(cierre.fecha).toLocaleTimeString("es-CO", { hour: '2-digit', minute: '2-digit' })}
+                          <span className="block text-[10px] font-normal text-slate-400">
+                            {new Date(cierre.fecha).toLocaleTimeString("es-CO", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
                           </span>
                         </td>
-                        <td className="px-3 sm:px-6 py-3 sm:py-4">
-                          <div className="flex flex-col">
-                            <span className="font-medium text-slate-800">{cierre.usuario.nombre}</span>
-                            <span className="text-xs text-slate-400 capitalize">{cierre.usuario.rol.toLowerCase()}</span>
-                          </div>
+                        <td className="px-4 py-3">
+                          <span className="block font-medium text-slate-800">{cierre.usuario.nombre}</span>
+                          <span className="text-xs text-slate-400 capitalize">{cierre.usuario.rol.toLowerCase()}</span>
                         </td>
-                        <td className="px-3 sm:px-6 py-3 sm:py-4 font-medium text-slate-700 hidden sm:table-cell">
-                          {cierre.numeroTransacciones} ventas
+                        <td className="px-4 py-3 text-right font-bold text-emerald-700 hidden sm:table-cell">
+                          {formatCurrency(cierre.totalEfectivo)}
                         </td>
-                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-right font-black text-slate-950">
-                          ${cierre.totalVentas.toLocaleString()}
+                        <td className="px-4 py-3 text-right font-bold text-purple-700 hidden md:table-cell">
+                          {formatCurrency(cierre.totalNequi)}
+                        </td>
+                        <td className="px-4 py-3 text-right font-bold text-blue-700 hidden lg:table-cell">
+                          {formatCurrency(cierre.totalBancolombia)}
+                        </td>
+                        <td className="px-4 py-3 text-right font-bold text-amber-700 hidden md:table-cell">
+                          {formatCurrency(cierre.totalFiado)}
+                        </td>
+                        <td className="px-4 py-3 text-right font-black text-slate-950">
+                          {formatCurrency(cierre.totalVentas)}
                         </td>
                       </tr>
                     ))}
@@ -322,8 +386,10 @@ export function CierreCajaClient({ rol }: Props) {
                 </table>
               </div>
             ) : (
-              <div className="mt-6 text-center py-12 border-2 border-dashed border-slate-200 rounded-xl">
-                <p className="text-sm text-slate-500 font-medium">Aún no se han guardado cierres de caja en el sistema.</p>
+              <div className="py-12 text-center border-2 border-dashed border-slate-200 rounded-xl">
+                <p className="text-sm text-slate-500 font-medium">
+                  Aún no se han guardado cierres de caja.
+                </p>
               </div>
             )}
           </section>

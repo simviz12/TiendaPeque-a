@@ -1,21 +1,42 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { ChevronDown, ChevronRight, Receipt, Package } from "lucide-react";
 import toast from "react-hot-toast";
 
-type Venta = {
+// ─── Types ────────────────────────────────────────────────────────────────
+type VentaItem = {
   id: string;
   cantidad: number;
+  precioUnitario: string;
   total: string;
-  fecha: string;
   producto: {
     nombre: string;
-    categoria: {
-      nombre: string;
-    };
+    categoria: { nombre: string };
   };
 };
 
+type Fiado = {
+  id: string;
+  montoTotal: string;
+  estado: string;
+  cliente: { nombre: string };
+};
+
+type Transaccion = {
+  id: string;
+  fecha: string;
+  total: string;
+  pagoEfectivo: string;
+  pagoNequi: string;
+  pagoBancolombia: string;
+  pagoFiado: string;
+  ventas: VentaItem[];
+  fiado: Fiado | null;
+  vendedor: { nombre: string };
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────
 function formatCurrency(value: string | number) {
   return new Intl.NumberFormat("es-CO", {
     style: "currency",
@@ -35,29 +56,48 @@ function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
+// Badges de método de pago
+function PaymentBadges({ t }: { t: Transaccion }) {
+  const badges = [];
+  if (Number(t.pagoEfectivo) > 0)
+    badges.push({ label: `💵 ${formatCurrency(t.pagoEfectivo)}`, cls: "bg-emerald-100 text-emerald-800" });
+  if (Number(t.pagoNequi) > 0)
+    badges.push({ label: `📱 ${formatCurrency(t.pagoNequi)}`, cls: "bg-purple-100 text-purple-800" });
+  if (Number(t.pagoBancolombia) > 0)
+    badges.push({ label: `🏦 ${formatCurrency(t.pagoBancolombia)}`, cls: "bg-blue-100 text-blue-800" });
+  if (Number(t.pagoFiado) > 0)
+    badges.push({ label: `📒 ${formatCurrency(t.pagoFiado)}`, cls: "bg-amber-100 text-amber-800" });
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {badges.map((b, i) => (
+        <span key={i} className={`rounded-full px-2.5 py-0.5 text-[11px] font-black ${b.cls}`}>
+          {b.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// ─── Componente Principal ─────────────────────────────────────────────────
 export function SalesHistoryClient() {
-  const [ventas, setVentas] = useState<Venta[]>([]);
+  const [transacciones, setTransacciones] = useState<Transaccion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   async function loadSales() {
     setIsLoading(true);
-
     try {
       const response = await fetch("/api/ventas");
       const data = (await response.json()) as {
-        ventas?: Venta[];
-        data?: Venta[];
+        data?: Transaccion[];
         message?: string;
       };
 
-      const salesList = data.ventas || data.data;
-
-      if (!response.ok || !salesList) {
+      if (!response.ok || !data.data) {
         toast.error(data.message ?? "No se pudo cargar el historial.");
         return;
       }
-
-      setVentas(salesList);
+      setTransacciones(data.data);
     } catch {
       toast.error("No se pudo conectar con el servidor.");
     } finally {
@@ -65,110 +105,173 @@ export function SalesHistoryClient() {
     }
   }
 
-  useEffect(() => {
-    void loadSales();
-  }, []);
+  useEffect(() => { void loadSales(); }, []);
 
+  // Resumen hoy / 7 días
   const summary = useMemo(() => {
     const today = startOfDay(new Date());
     const sevenDaysAgo = startOfDay(new Date());
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
 
-    return ventas.reduce(
-      (accumulator, venta) => {
-        const saleDate = new Date(venta.fecha);
-        const total = Number(venta.total);
-
-        if (saleDate >= today) {
-          accumulator.today += total;
-        }
-
-        if (saleDate >= sevenDaysAgo) {
-          accumulator.week += total;
-        }
-
-        return accumulator;
+    return transacciones.reduce(
+      (acc, t) => {
+        const d = new Date(t.fecha);
+        const total = Number(t.total);
+        if (d >= today) acc.today += total;
+        if (d >= sevenDaysAgo) acc.week += total;
+        return acc;
       },
       { today: 0, week: 0 },
     );
-  }, [ventas]);
+  }, [transacciones]);
+
+  function toggleExpand(id: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   return (
-    <main className="min-h-screen px-5 py-6">
-      <section className="mx-auto max-w-6xl">
-        <header className="border-b border-slate-200 pb-6">
-          <p className="text-base font-bold uppercase tracking-wide text-emerald-700">
-            Vendedor
-          </p>
-          <h1 className="mt-2 text-4xl font-black">Mi historial</h1>
-          <p className="mt-3 max-w-2xl text-lg leading-8 text-slate-700">
-            Revisa tus ventas recientes y los totales vendidos hoy y esta
-            semana.
+    <main className="min-h-screen px-4 py-6 sm:px-6">
+      <section className="mx-auto max-w-5xl">
+
+        {/* Encabezado */}
+        <header className="border-b border-slate-200 pb-6 mb-6">
+          <p className="text-sm font-black uppercase tracking-wide text-primary-700">Vendedor</p>
+          <h1 className="mt-1 text-4xl font-black text-slate-900">Mi Historial</h1>
+          <p className="mt-2 text-base text-slate-600">
+            Revisa tus transacciones recientes y los totales del día.
           </p>
         </header>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-base font-bold text-slate-500">Vendido hoy</p>
-            <p className="mt-2 text-3xl font-black">
-              {formatCurrency(summary.today)}
-            </p>
+        {/* Tarjetas de resumen */}
+        <div className="mb-6 grid gap-4 sm:grid-cols-2">
+          <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-sm font-black uppercase tracking-wider text-slate-500">Vendido hoy</p>
+            <p className="mt-2 text-3xl font-black text-slate-900">{formatCurrency(summary.today)}</p>
           </article>
-          <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-base font-bold text-slate-500">
-              Ultimos 7 dias
-            </p>
-            <p className="mt-2 text-3xl font-black">
-              {formatCurrency(summary.week)}
-            </p>
+          <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-sm font-black uppercase tracking-wider text-slate-500">Últimos 7 días</p>
+            <p className="mt-2 text-3xl font-black text-slate-900">{formatCurrency(summary.week)}</p>
           </article>
         </div>
 
-        <section className="mt-6 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+        {/* Lista de transacciones */}
+        <section className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4">
+            <Receipt size={18} className="text-primary-600" />
+            <h2 className="font-black text-slate-900">Transacciones</h2>
+          </div>
+
           {isLoading ? (
-            <div className="p-6 text-lg font-bold text-slate-700">
-              Cargando historial...
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-primary-600" />
+              <p className="mt-4 font-bold text-slate-500">Cargando historial...</p>
             </div>
-          ) : ventas.length === 0 ? (
-            <div className="p-6 text-lg font-bold text-slate-700">
-              Todavia no tienes ventas registradas.
+          ) : transacciones.length === 0 ? (
+            <div className="py-16 text-center">
+              <Receipt size={40} className="mx-auto mb-3 text-slate-300" />
+              <p className="font-black text-slate-500">Todavía no tienes ventas registradas.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[760px] border-collapse text-left">
-                <thead className="bg-slate-100">
-                  <tr>
-                    <th className="px-4 py-3 text-base font-black">Fecha</th>
-                    <th className="px-4 py-3 text-base font-black">Producto</th>
-                    <th className="px-4 py-3 text-base font-black">
-                      Categoria
-                    </th>
-                    <th className="px-4 py-3 text-base font-black">
-                      Cantidad
-                    </th>
-                    <th className="px-4 py-3 text-base font-black">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ventas.map((venta) => (
-                    <tr className="border-t border-slate-200" key={venta.id}>
-                      <td className="px-4 py-4 text-base font-bold">
-                        {formatDate(venta.fecha)}
-                      </td>
-                      <td className="px-4 py-4 text-base">
-                        {venta.producto.nombre}
-                      </td>
-                      <td className="px-4 py-4 text-base">
-                        {venta.producto.categoria.nombre}
-                      </td>
-                      <td className="px-4 py-4 text-base">{venta.cantidad}</td>
-                      <td className="px-4 py-4 text-base font-black">
-                        {formatCurrency(venta.total)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="divide-y divide-slate-100">
+              {transacciones.map((t) => {
+                const isOpen = expanded.has(t.id);
+                const numItems = t.ventas.reduce((a, v) => a + v.cantidad, 0);
+
+                return (
+                  <div key={t.id}>
+                    {/* Fila de la transacción */}
+                    <button
+                      onClick={() => toggleExpand(t.id)}
+                      type="button"
+                      className="w-full flex items-center gap-3 px-5 py-4 hover:bg-slate-50 transition text-left group"
+                    >
+                      {/* Icono expand */}
+                      <span className="shrink-0 text-slate-400 group-hover:text-primary-600 transition">
+                        {isOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                      </span>
+
+                      {/* Info principal */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <span className="text-sm font-black text-slate-900">
+                            {formatDate(t.fecha)}
+                          </span>
+                          <span className="text-xs font-bold text-slate-400">
+                            {numItems} producto(s)
+                          </span>
+                        </div>
+                        <div className="mt-1.5">
+                          <PaymentBadges t={t} />
+                        </div>
+                      </div>
+
+                      {/* Total */}
+                      <span className="shrink-0 text-lg font-black text-slate-900">
+                        {formatCurrency(t.total)}
+                      </span>
+                    </button>
+
+                    {/* Detalle expandido */}
+                    {isOpen && (
+                      <div className="bg-slate-50 border-t border-slate-100 px-5 py-4">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">
+                          <Package size={12} className="inline mr-1" />
+                          Productos en esta orden
+                        </p>
+                        <div className="space-y-2">
+                          {t.ventas.map((item) => (
+                            <div
+                              key={item.id}
+                              className="flex items-center justify-between rounded-xl bg-white border border-slate-200 px-4 py-3"
+                            >
+                              <div>
+                                <p className="text-sm font-black text-slate-900">
+                                  {item.producto.nombre}
+                                </p>
+                                <p className="text-xs font-bold text-slate-400 mt-0.5">
+                                  {item.producto.categoria.nombre} ·{" "}
+                                  {item.cantidad} × {formatCurrency(item.precioUnitario)}
+                                </p>
+                              </div>
+                              <span className="text-sm font-black text-primary-700">
+                                {formatCurrency(item.total)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Info fiado si aplica */}
+                        {t.fiado && (
+                          <div className="mt-3 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
+                            <p className="text-xs font-black text-amber-800">
+                              📒 Fiado — Cliente:{" "}
+                              <span className="font-black">{t.fiado.cliente.nombre}</span>
+                            </p>
+                            <p className="text-xs font-bold text-amber-700 mt-0.5">
+                              Monto fiado: {formatCurrency(t.fiado.montoTotal)} ·{" "}
+                              Estado:{" "}
+                              <span className={
+                                t.fiado.estado === "PAGADO_TOTAL"
+                                  ? "text-green-700"
+                                  : t.fiado.estado === "PAGADO_PARCIAL"
+                                  ? "text-blue-700"
+                                  : "text-red-700"
+                              }>
+                                {t.fiado.estado.replace("_", " ")}
+                              </span>
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </section>

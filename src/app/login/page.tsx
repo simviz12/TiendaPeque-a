@@ -11,7 +11,7 @@ export default function LoginPage() {
     <main
       style={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 40%, #bbf7d0 100%)",
+        background: "linear-gradient(135deg, #FFF0F2 0%, #FFE3E7 40%, #FBC4CB 100%)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -29,7 +29,7 @@ export default function LoginPage() {
           width: "400px",
           height: "400px",
           borderRadius: "50%",
-          background: "rgba(22,163,74,0.12)",
+          background: "rgba(244,63,94,0.08)",
           pointerEvents: "none",
         }}
       />
@@ -42,7 +42,7 @@ export default function LoginPage() {
           width: "280px",
           height: "280px",
           borderRadius: "50%",
-          background: "rgba(16,185,129,0.10)",
+          background: "rgba(251,113,133,0.06)",
           pointerEvents: "none",
         }}
       />
@@ -58,8 +58,8 @@ export default function LoginPage() {
               width: "80px",
               height: "80px",
               borderRadius: "24px",
-              background: "linear-gradient(135deg, #16a34a, #15803d)",
-              boxShadow: "0 8px 32px rgba(22,163,74,0.35)",
+              background: "linear-gradient(135deg, #e11d48, #be123c)",
+              boxShadow: "0 8px 32px rgba(225,29,72,0.3)",
               marginBottom: "1.25rem",
             }}
           >
@@ -69,7 +69,7 @@ export default function LoginPage() {
             style={{
               fontSize: "2.2rem",
               fontWeight: 900,
-              color: "#0f172a",
+              color: "#4c0519",
               letterSpacing: "-0.02em",
               lineHeight: 1.1,
               margin: 0,
@@ -81,7 +81,7 @@ export default function LoginPage() {
             style={{
               marginTop: "0.6rem",
               fontSize: "1.1rem",
-              color: "#475569",
+              color: "#881337",
               fontWeight: 500,
             }}
           >
@@ -94,9 +94,9 @@ export default function LoginPage() {
           style={{
             background: "#ffffff",
             borderRadius: "20px",
-            boxShadow: "0 8px 40px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05)",
+            boxShadow: "0 8px 40px rgba(76,5,25,0.06), 0 2px 8px rgba(76,5,25,0.03)",
             padding: "2.5rem 2rem",
-            border: "1px solid rgba(22,163,74,0.12)",
+            border: "1px solid rgba(225,29,72,0.08)",
           }}
         >
           <div style={{ marginBottom: "1.75rem" }}>

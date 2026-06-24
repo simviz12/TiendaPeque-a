@@ -306,7 +306,7 @@ export function InventoryClient() {
       {/* Header */}
       <header className="mx-auto flex max-w-6xl flex-col gap-6 border-b border-slate-200/80 pb-6 md:flex-row md:items-center md:justify-between">
         <div>
-          <p className="text-sm font-bold uppercase tracking-wider text-emerald-600">
+          <p className="text-sm font-bold uppercase tracking-wider text-primary-600">
             Módulo de Administración
           </p>
           <h1 className="mt-1 text-4xl font-extrabold tracking-tight text-slate-900">
@@ -328,7 +328,7 @@ export function InventoryClient() {
           </button>
           
           <button
-            className="flex items-center gap-2 rounded-xl bg-emerald-600 text-white px-5 py-3.5 text-sm font-bold shadow-md shadow-emerald-600/10 transition hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-100"
+            className="flex items-center gap-2 rounded-xl bg-primary-600 text-white px-5 py-3.5 text-sm font-bold shadow-md shadow-primary-600/10 transition hover:bg-primary-700 focus:outline-none focus:ring-4 focus:ring-primary-100"
             onClick={openCreateProductModal}
             type="button"
           >
@@ -344,7 +344,7 @@ export function InventoryClient() {
           <button
             className={`px-6 py-3 text-base font-bold transition-all border-b-2 ${
               activeTab === "productos"
-                ? "border-emerald-600 text-emerald-700 font-extrabold"
+                ? "border-primary-600 text-primary-700 font-extrabold"
                 : "border-transparent text-slate-500 hover:text-slate-700"
             }`}
             onClick={() => setActiveTab("productos")}
@@ -354,7 +354,7 @@ export function InventoryClient() {
           <button
             className={`px-6 py-3 text-base font-bold transition-all border-b-2 ${
               activeTab === "categorias"
-                ? "border-emerald-600 text-emerald-700 font-extrabold"
+                ? "border-primary-600 text-primary-700 font-extrabold"
                 : "border-transparent text-slate-500 hover:text-slate-700"
             }`}
             onClick={() => setActiveTab("categorias")}
@@ -382,7 +382,7 @@ export function InventoryClient() {
                       size={20}
                     />
                     <input
-                      className="h-13 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-4 text-base outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50"
+                      className="h-13 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-4 text-base outline-none transition focus:border-primary-500 focus:ring-4 focus:ring-primary-50"
                       onChange={(event) => setProductSearch(event.target.value)}
                       placeholder="Buscar producto por nombre..."
                       value={productSearch}
@@ -390,7 +390,7 @@ export function InventoryClient() {
                   </div>
 
                   <select
-                    className="h-13 rounded-xl border border-slate-200 bg-white px-4 text-base font-semibold text-slate-700 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50"
+                    className="h-13 rounded-xl border border-slate-200 bg-white px-4 text-base font-semibold text-slate-700 outline-none transition focus:border-primary-500 focus:ring-4 focus:ring-primary-50"
                     onChange={(event) => setCategoryFilter(event.target.value)}
                     value={categoryFilter}
                   >
@@ -413,7 +413,7 @@ export function InventoryClient() {
                       <section key={group.categoria.id} className="space-y-4">
                         <div className="flex items-center justify-between border-b border-slate-200/50 pb-2">
                           <h2 className="text-xl font-extrabold text-slate-800 flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                            <span className="w-2.5 h-2.5 rounded-full bg-primary-500" />
                             {group.categoria.nombre}
                           </h2>
                           <span className={`rounded-full px-3 py-0.5 text-xs font-bold uppercase tracking-wider ${
@@ -428,12 +428,12 @@ export function InventoryClient() {
                         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                           {group.productos.map((producto) => (
                             <article
-                              className="group rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition-all duration-200 hover:border-emerald-500/50 hover:shadow-md"
+                              className="group rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition-all duration-200 hover:border-primary-500/50 hover:shadow-md"
                               key={producto.id}
                             >
                               <div className="flex items-start justify-between gap-4">
                                 <div>
-                                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">
+                                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-primary-700 transition-colors">
                                     {producto.nombre}
                                   </h3>
                                   <p className="mt-1 text-sm font-semibold text-slate-500">
@@ -500,7 +500,7 @@ export function InventoryClient() {
                     size={20}
                   />
                   <input
-                    className="h-13 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-4 text-base outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50"
+                    className="h-13 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-4 text-base outline-none transition focus:border-primary-500 focus:ring-4 focus:ring-primary-50"
                     onChange={(event) => setCategorySearch(event.target.value)}
                     placeholder="Buscar categorías por nombre..."
                     value={categorySearch}
@@ -518,12 +518,12 @@ export function InventoryClient() {
                       
                       return (
                         <article
-                          className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-emerald-500/50 hover:shadow-md"
+                          className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-primary-500/50 hover:shadow-md"
                           key={categoria.id}
                         >
                           <div className="flex items-start justify-between gap-4">
                             <div>
-                              <h3 className="text-lg font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">
+                              <h3 className="text-lg font-bold text-slate-900 group-hover:text-primary-700 transition-colors">
                                 {categoria.nombre}
                               </h3>
                               <p className="mt-1 text-sm font-semibold text-slate-500">
@@ -577,7 +577,7 @@ export function InventoryClient() {
           >
             <div className="flex items-start justify-between gap-4 border-b border-slate-200 pb-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-emerald-600">
+                <p className="text-xs font-bold uppercase tracking-wider text-primary-600">
                   Formulario de Producto
                 </p>
                 <h2 className="text-2xl font-extrabold text-slate-900 mt-1">
@@ -597,7 +597,7 @@ export function InventoryClient() {
               <label className="md:col-span-2 block">
                 <span className="text-sm font-bold text-slate-700">Nombre del Producto</span>
                 <input
-                  className="mt-2 h-12 w-full rounded-xl border border-slate-200 px-4 text-base outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50"
+                  className="mt-2 h-12 w-full rounded-xl border border-slate-200 px-4 text-base outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-50"
                   onChange={(event) =>
                     setProductForm((current) => ({
                       ...current,
@@ -612,7 +612,7 @@ export function InventoryClient() {
               <label className="block">
                 <span className="text-sm font-bold text-slate-700">Categoría</span>
                 <select
-                  className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-base outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50"
+                  className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-base outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-50"
                   onChange={(event) =>
                     setProductForm((current) => ({
                       ...current,
@@ -634,7 +634,7 @@ export function InventoryClient() {
               <label className="block">
                 <span className="text-sm font-bold text-slate-700">Existencia Inicial (Stock)</span>
                 <input
-                  className="mt-2 h-12 w-full rounded-xl border border-slate-200 px-4 text-base outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50"
+                  className="mt-2 h-12 w-full rounded-xl border border-slate-200 px-4 text-base outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-50"
                   disabled={productForm.esDePaquete}
                   min="0"
                   onChange={(event) =>
@@ -651,7 +651,7 @@ export function InventoryClient() {
               <label className="block">
                 <span className="text-sm font-bold text-slate-700">Precio Venta (COP)</span>
                 <input
-                  className="mt-2 h-12 w-full rounded-xl border border-slate-200 px-4 text-base outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50"
+                  className="mt-2 h-12 w-full rounded-xl border border-slate-200 px-4 text-base outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-50"
                   min="0"
                   onChange={(event) =>
                     setProductForm((current) => ({
@@ -668,7 +668,7 @@ export function InventoryClient() {
               <label className="block">
                 <span className="text-sm font-bold text-slate-700">Costo Unitario (COP)</span>
                 <input
-                  className="mt-2 h-12 w-full rounded-xl border border-slate-200 px-4 text-base outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50"
+                  className="mt-2 h-12 w-full rounded-xl border border-slate-200 px-4 text-base outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-50"
                   min="0"
                   onChange={(event) =>
                     setProductForm((current) => ({
@@ -685,7 +685,7 @@ export function InventoryClient() {
               <label className="flex h-14 items-center gap-3 rounded-xl border border-slate-200 px-4 md:col-span-2 cursor-pointer bg-slate-50/50 hover:bg-slate-50 select-none">
                 <input
                   checked={productForm.esDePaquete}
-                  className="h-5 w-5 rounded accent-emerald-600"
+                  className="h-5 w-5 rounded accent-primary-600"
                   onChange={(event) =>
                     setProductForm((current) => ({
                       ...current,
@@ -702,7 +702,7 @@ export function InventoryClient() {
                   <label className="block">
                     <span className="text-sm font-bold text-slate-700">Unidades por paquete</span>
                     <input
-                      className="mt-2 h-12 w-full rounded-xl border border-slate-200 px-4 text-base outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50"
+                      className="mt-2 h-12 w-full rounded-xl border border-slate-200 px-4 text-base outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-50"
                       min="1"
                       onChange={(event) =>
                         setProductForm((current) => ({
@@ -719,7 +719,7 @@ export function InventoryClient() {
                   <label className="block">
                     <span className="text-sm font-bold text-slate-700">Número de paquetes</span>
                     <input
-                      className="mt-2 h-12 w-full rounded-xl border border-slate-200 px-4 text-base outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50"
+                      className="mt-2 h-12 w-full rounded-xl border border-slate-200 px-4 text-base outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-50"
                       min="1"
                       onChange={(event) =>
                         setProductForm((current) => ({
@@ -745,7 +745,7 @@ export function InventoryClient() {
                 Cancelar
               </button>
               <button
-                className="h-12 rounded-xl bg-emerald-600 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:bg-slate-350"
+                className="h-12 rounded-xl bg-primary-600 text-sm font-bold text-white transition hover:bg-primary-700 disabled:bg-slate-350"
                 disabled={isProductSaving}
                 type="submit"
               >
@@ -765,7 +765,7 @@ export function InventoryClient() {
           >
             <div className="flex items-start justify-between gap-4 border-b border-slate-200 pb-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-emerald-600">
+                <p className="text-xs font-bold uppercase tracking-wider text-primary-600">
                   Formulario de Categoría
                 </p>
                 <h2 className="text-2xl font-extrabold text-slate-900 mt-1">
@@ -785,7 +785,7 @@ export function InventoryClient() {
               <label className="block">
                 <span className="text-sm font-bold text-slate-700">Nombre de la Categoría</span>
                 <input
-                  className="mt-2 h-12 w-full rounded-xl border border-slate-200 px-4 text-base outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50"
+                  className="mt-2 h-12 w-full rounded-xl border border-slate-200 px-4 text-base outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-50"
                   onChange={(event) =>
                     setCategoryForm((current) => ({
                       ...current,
@@ -800,7 +800,7 @@ export function InventoryClient() {
               <label className="block">
                 <span className="text-sm font-bold text-slate-700">Tipo de Categoría</span>
                 <select
-                  className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-base outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50"
+                  className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-base outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-50"
                   onChange={(event) =>
                     setCategoryForm((current) => ({
                       ...current,
@@ -825,7 +825,7 @@ export function InventoryClient() {
                 Cancelar
               </button>
               <button
-                className="h-12 rounded-xl bg-emerald-600 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:bg-slate-350"
+                className="h-12 rounded-xl bg-primary-600 text-sm font-bold text-white transition hover:bg-primary-700 disabled:bg-slate-350"
                 disabled={isCategorySaving}
                 type="submit"
               >

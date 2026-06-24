@@ -91,8 +91,8 @@ export function LoginForm() {
           autoFocus
           disabled={isLoading}
           onFocus={(e) => {
-            e.target.style.borderColor = "#16a34a";
-            e.target.style.boxShadow = "0 0 0 4px rgba(22,163,74,0.12)";
+            e.target.style.borderColor = "#f43f5e";
+            e.target.style.boxShadow = "0 0 0 4px rgba(244,63,94,0.12)";
             e.target.style.background = "#ffffff";
           }}
           onBlur={(e) => {
@@ -126,8 +126,8 @@ export function LoginForm() {
             autoComplete="current-password"
             disabled={isLoading}
             onFocus={(e) => {
-              e.target.style.borderColor = "#16a34a";
-              e.target.style.boxShadow = "0 0 0 4px rgba(22,163,74,0.12)";
+              e.target.style.borderColor = "#f43f5e";
+              e.target.style.boxShadow = "0 0 0 4px rgba(244,63,94,0.12)";
               e.target.style.background = "#ffffff";
             }}
             onBlur={(e) => {
@@ -171,7 +171,7 @@ export function LoginForm() {
           border: "none",
           background: isLoading
             ? "#94a3b8"
-            : "linear-gradient(135deg, #16a34a 0%, #15803d 100%)",
+            : "linear-gradient(135deg, #e11d48 0%, #be123c 100%)",
           color: "white",
           fontSize: "1.15rem",
           fontWeight: 800,
@@ -181,21 +181,21 @@ export function LoginForm() {
           alignItems: "center",
           justifyContent: "center",
           gap: "0.6rem",
-          boxShadow: isLoading ? "none" : "0 4px 20px rgba(22,163,74,0.35)",
+          boxShadow: isLoading ? "none" : "0 4px 20px rgba(225,29,72,0.25)",
           transition: "all 0.2s",
           letterSpacing: "0.01em",
         }}
         onMouseEnter={(e) => {
           if (!isLoading) {
             (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
-            (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 28px rgba(22,163,74,0.45)";
+            (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 6px 28px rgba(225,29,72,0.35)";
           }
         }}
         onMouseLeave={(e) => {
           (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
           (e.currentTarget as HTMLButtonElement).style.boxShadow = isLoading
             ? "none"
-            : "0 4px 20px rgba(22,163,74,0.35)";
+            : "0 4px 20px rgba(225,29,72,0.25)";
         }}
       >
         {isLoading ? (

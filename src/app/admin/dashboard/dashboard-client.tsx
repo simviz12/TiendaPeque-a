@@ -147,7 +147,7 @@ export function DashboardClient() {
   if (loading) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-emerald-600" />
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-primary-600" />
         <p className="mt-4 text-base font-semibold text-slate-600">
           Cargando datos del panel administrador...
         </p>
@@ -196,8 +196,8 @@ export function DashboardClient() {
   } else if (score > 70) {
     saludTitulo = "Excelente";
     saludMensaje = "¡Excelente salud del negocio! Sigue así, el negocio va viento en popa.";
-    saludBadgeColor = "bg-emerald-100 text-emerald-800";
-    saludTextColor = "text-emerald-700";
+    saludBadgeColor = "bg-primary-100 text-primary-800";
+    saludTextColor = "text-primary-700";
   } else if (score > 40) {
     saludTitulo = "Estable";
     saludMensaje = "Salud estable. Buen rendimiento, pero hay oportunidades de mejora.";
@@ -217,7 +217,7 @@ export function DashboardClient() {
         {/* Encabezado */}
         <header className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <p className="text-sm font-bold uppercase tracking-wider text-emerald-700">
+            <p className="text-sm font-bold uppercase tracking-wider text-primary-700">
               Panel de Control
             </p>
             <h1 className="text-4xl font-black tracking-tight text-slate-900">
@@ -225,7 +225,7 @@ export function DashboardClient() {
             </h1>
           </div>
           <div className="flex items-center gap-2 rounded-xl bg-white px-4 py-2 shadow-sm border border-slate-200 text-sm font-semibold text-slate-600">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
+            <span className="h-2 w-2 rounded-full bg-primary-500 animate-ping" />
             <span>Actualizado en tiempo real</span>
           </div>
         </header>
@@ -238,7 +238,7 @@ export function DashboardClient() {
               <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
                 Ingresos del Mes
               </span>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white transition-colors duration-300">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50 text-primary-700 group-hover:bg-primary-600 group-hover:text-white transition-colors duration-300">
                 <DollarSign size={20} />
               </div>
             </div>
@@ -298,7 +298,7 @@ export function DashboardClient() {
           {/* Índice de Salud del Negocio (Wow Component) */}
           <div className="flex flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="flex items-center gap-2 text-xl font-extrabold text-slate-800">
-              <Activity className="text-emerald-600" size={22} />
+              <Activity className="text-primary-600" size={22} />
               Salud del Negocio
             </h2>
             <div className="mt-2 h-px bg-slate-100" />
@@ -553,7 +553,7 @@ export function DashboardClient() {
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2 space-y-6">
             <div>
               <h2 className="text-xl font-extrabold text-slate-800 flex items-center gap-2">
-                <ArrowUpRight className="text-emerald-600" size={22} />
+                <ArrowUpRight className="text-primary-600" size={22} />
                 Top 5 Más Vendidos del Mes
               </h2>
               <div className="mt-2 h-px bg-slate-100" />
@@ -576,7 +576,7 @@ export function DashboardClient() {
                           <td className="px-4 py-2.5 font-bold text-slate-900">{prod.nombre}</td>
                           <td className="px-4 py-2.5 text-slate-500 hidden sm:table-cell">{prod.categoria}</td>
                           <td className="px-4 py-2.5 text-slate-800 font-black">{prod.cantidad}</td>
-                          <td className="px-4 py-2.5 text-emerald-700 font-extrabold">${prod.total.toLocaleString()}</td>
+                          <td className="px-4 py-2.5 text-primary-700 font-extrabold">${prod.total.toLocaleString()}</td>
                           <td className="px-4 py-2.5 text-right font-semibold hidden sm:table-cell">
                             <span className={`px-2 py-0.5 rounded-full text-xs ${prod.stock < 10 ? "bg-red-50 text-red-700" : "bg-slate-100 text-slate-700"}`}>
                               {prod.stock}
