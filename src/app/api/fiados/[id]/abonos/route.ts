@@ -5,12 +5,13 @@ import { verifyJwtAndGetUser } from '@/infrastructure/auth/session';
 
 const abonoSchema = z.object({
   monto: z.number().positive('El monto debe ser mayor a 0.'),
+  metodoPago: z.enum(['EFECTIVO', 'NEQUI', 'BANCOLOMBIA']).default('EFECTIVO'),
   notas: z.string().optional(),
 });
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> | { id: string } }
 ) {
   const user = await verifyJwtAndGetUser();
 
@@ -21,7 +22,8 @@ export async function POST(
     );
   }
 
-  const { id } = params;
+  const resolvedParams = await context.params;
+  const { id } = resolvedParams;
   const body = await request.json();
   const parsed = abonoSchema.safeParse(body);
 
@@ -32,7 +34,7 @@ export async function POST(
     );
   }
 
-  const { monto, notas } = parsed.data;
+  const { monto, metodoPago, notas } = parsed.data;
 
   try {
     const result = await prisma.$transaction(async (tx) => {
@@ -66,10 +68,23 @@ export async function POST(
         },
       });
 
+      // Registrar el ingreso en caja creando una transacción de abono
+      await tx.transaccion.create({
+        data: {
+          vendedorId: user.id,
+          total: 0, // No suma a las ventas brutas
+          pagoEfectivo: metodoPago === 'EFECTIVO' ? monto : 0,
+          pagoNequi: metodoPago === 'NEQUI' ? monto : 0,
+          pagoBancolombia: metodoPago === 'BANCOLOMBIA' ? monto : 0,
+          pagoFiado: -monto, // Resta de la deuda en los totales del sistema
+          fecha: new Date(),
+        },
+      });
+
       await tx.logAuditoria.create({
         data: {
           usuarioId: user.id,
-          accion: `Abono a Fiado (${fiado.cliente.nombre}): ${monto} — Estado: ${nuevoEstado}`,
+          accion: `Abono a Fiado (${fiado.cliente.nombre}): ${monto} en ${metodoPago} — Estado: ${nuevoEstado}`,
           fecha: new Date(),
         },
       });

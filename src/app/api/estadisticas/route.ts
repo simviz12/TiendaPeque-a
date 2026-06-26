@@ -3,9 +3,12 @@ import { prisma } from '@/infrastructure/database/prisma';
 import { verifyJwtAndGetUser } from '@/infrastructure/auth/session';
 import { z } from 'zod';
 
+export const dynamic = 'force-dynamic';
+
 const querySchema = z.object({
   startDate: z.string().optional(),
-  endDate: z.string().optional()
+  endDate: z.string().optional(),
+  all: z.string().optional(),
 });
 
 export async function GET(request: Request) {
@@ -19,13 +22,19 @@ export async function GET(request: Request) {
   if (!parseResult.success) {
     return NextResponse.json({ message: 'Parámetros inválidos' }, { status: 400 });
   }
-  const { startDate, endDate } = parseResult.data;
+  const { startDate, endDate, all } = parseResult.data;
 
   try {
     const where: any = {};
     if (startDate && endDate) {
       where.fecha = { gte: new Date(startDate), lte: new Date(endDate) };
+    } else if (!all) {
+      // Default to last 30 days only when no explicit period is requested
+      const defaultStart = new Date();
+      defaultStart.setDate(defaultStart.getDate() - 30);
+      where.fecha = { gte: defaultStart };
     }
+    // If all=true → no date filter → returns full history
 
     // 1. Totales Generales
     const totalAggregate = await prisma.venta.aggregate({

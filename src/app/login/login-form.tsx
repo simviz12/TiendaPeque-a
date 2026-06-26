@@ -41,8 +41,7 @@ export function LoginForm() {
       }
 
       toast.success("¡Bienvenido! Ingresando...");
-      router.replace(data.user.rol === "ADMIN" ? "/admin" : "/vendedor");
-      router.refresh();
+      window.location.replace(data.user.rol === "ADMIN" ? "/admin" : "/vendedor");
     } catch {
       toast.error("No se pudo conectar con el servidor. Intenta de nuevo.");
     } finally {

@@ -83,6 +83,9 @@ export function SalesHistoryClient() {
   const [transacciones, setTransacciones] = useState<Transaccion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  // Date filter states
+  const [filterStartDate, setFilterStartDate] = useState<string>('');
+  const [filterEndDate, setFilterEndDate] = useState<string>('');
 
   async function loadSales() {
     setIsLoading(true);
@@ -107,13 +110,24 @@ export function SalesHistoryClient() {
 
   useEffect(() => { void loadSales(); }, []);
 
-  // Resumen hoy / 7 días
+  // Resumen filtrado por fechas
+  const filteredTransacciones = useMemo(() => {
+    if (!filterStartDate && !filterEndDate) return transacciones;
+    return transacciones.filter((t) => {
+      // Comparar sólo la parte de fecha (YYYY-MM-DD) para evitar bugs de zona horaria
+      const tDay = t.fecha.slice(0, 10); // "YYYY-MM-DD"
+      if (filterStartDate && tDay < filterStartDate) return false;
+      if (filterEndDate && tDay > filterEndDate) return false;
+      return true;
+    });
+  }, [transacciones, filterStartDate, filterEndDate]);
+
   const summary = useMemo(() => {
     const today = startOfDay(new Date());
     const sevenDaysAgo = startOfDay(new Date());
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
 
-    return transacciones.reduce(
+    return filteredTransacciones.reduce(
       (acc, t) => {
         const d = new Date(t.fecha);
         const total = Number(t.total);
@@ -123,7 +137,7 @@ export function SalesHistoryClient() {
       },
       { today: 0, week: 0 },
     );
-  }, [transacciones]);
+  }, [filteredTransacciones]);
 
   function toggleExpand(id: string) {
     setExpanded((prev) => {
@@ -135,8 +149,7 @@ export function SalesHistoryClient() {
   }
 
   return (
-    <main className="min-h-screen px-4 py-6 sm:px-6">
-      <section className="mx-auto max-w-5xl">
+    <div className="space-y-6 max-w-5xl mx-auto">
 
         {/* Encabezado */}
         <header className="border-b border-slate-200 pb-6 mb-6">
@@ -146,6 +159,32 @@ export function SalesHistoryClient() {
             Revisa tus transacciones recientes y los totales del día.
           </p>
         </header>
+
+        {/* Date filter toolbar */}
+        <div className="mb-4 flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <label className="block text-xs font-black uppercase text-slate-500 mb-1" htmlFor="start-date">Fecha inicio</label>
+            <input
+              id="start-date"
+              type="date"
+              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary-200 transition"
+              value={filterStartDate}
+              onChange={(e) => setFilterStartDate(e.target.value)}
+              aria-label="Fecha de inicio"
+            />
+          </div>
+          <div className="relative flex-1">
+            <label className="block text-xs font-black uppercase text-slate-500 mb-1" htmlFor="end-date">Fecha fin</label>
+            <input
+              id="end-date"
+              type="date"
+              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary-200 transition"
+              value={filterEndDate}
+              onChange={(e) => setFilterEndDate(e.target.value)}
+              aria-label="Fecha de fin"
+            />
+          </div>
+        </div>
 
         {/* Tarjetas de resumen */}
         <div className="mb-6 grid gap-4 sm:grid-cols-2">
@@ -161,9 +200,21 @@ export function SalesHistoryClient() {
 
         {/* Lista de transacciones */}
         <section className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-          <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4">
-            <Receipt size={18} className="text-primary-600" />
-            <h2 className="font-black text-slate-900">Transacciones</h2>
+          <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-5 py-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Receipt size={18} className="text-primary-600" />
+              <h2 className="font-black text-slate-900">Transacciones</h2>
+            </div>
+            {/* Indicador de filtro activo */}
+            {(filterStartDate || filterEndDate) ? (
+              <span className="rounded-full bg-primary-100 text-primary-700 text-xs font-black px-3 py-1">
+                🔍 Mostrando {filteredTransacciones.length} de {transacciones.length} ventas
+              </span>
+            ) : (
+              <span className="text-xs font-bold text-slate-400">
+                {transacciones.length} ventas en total
+              </span>
+            )}
           </div>
 
           {isLoading ? (
@@ -178,7 +229,7 @@ export function SalesHistoryClient() {
             </div>
           ) : (
             <div className="divide-y divide-slate-100">
-              {transacciones.map((t) => {
+              {filteredTransacciones.map((t) => {
                 const isOpen = expanded.has(t.id);
                 const numItems = t.ventas.reduce((a, v) => a + v.cantidad, 0);
 
@@ -275,7 +326,6 @@ export function SalesHistoryClient() {
             </div>
           )}
         </section>
-      </section>
-    </main>
+    </div>
   );
 }

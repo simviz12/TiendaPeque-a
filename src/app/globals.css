@@ -29,6 +29,7 @@
   --text-primary: #0f172a;
   --text-secondary: #475569;
   --text-muted: #94a3b8;
+  --brand-green: #059669;
 
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -49,6 +50,7 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
@@ -58,6 +60,8 @@ body {
   line-height: 1.6;
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 /* ---------- Typography ---------- */

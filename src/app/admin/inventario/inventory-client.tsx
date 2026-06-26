@@ -760,7 +760,7 @@ export function InventoryClient() {
       {isCategoryModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs">
           <form
-            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-slate-100"
+            className="w-full max-w-md max-h-[92vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-xl border border-slate-100"
             onSubmit={handleCategorySubmit}
           >
             <div className="flex items-start justify-between gap-4 border-b border-slate-200 pb-4">

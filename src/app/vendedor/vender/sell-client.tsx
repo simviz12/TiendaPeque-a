@@ -51,6 +51,7 @@ export function SellClient() {
 
   // Carrito
   const [carrito, setCarrito] = useState<ItemCarrito[]>([]);
+  const [activeTab, setActiveTab] = useState<"catalogo" | "carrito">("catalogo");
 
   // Modal de cobro
   const [showModal, setShowModal] = useState(false);
@@ -159,6 +160,7 @@ export function SellClient() {
   function limpiarCarrito() {
     setCarrito([]);
     cerrarModal();
+    setActiveTab("catalogo");
   }
 
   // ─── Modal de cobro ───────────────────────────────────────────────────
@@ -271,29 +273,8 @@ export function SellClient() {
 
   // ─── Render ───────────────────────────────────────────────────────────
   return (
-    <main className="min-h-screen bg-slate-50">
-      {/* ── Header ────────────────────────────────────────────────────── */}
-      <header className="bg-white border-b border-slate-200 shadow-sm px-4 py-3 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-600 text-white shadow">
-            <ShoppingBag size={20} />
-          </div>
-          <div>
-            <span className="text-xs font-black uppercase tracking-wider text-primary-700">
-              🟢 Caja Abierta
-            </span>
-            <h1 className="text-xl font-black text-slate-900 leading-tight">
-              Punto de Venta
-            </h1>
-          </div>
-        </div>
-        {totalItems > 0 && (
-          <div className="flex items-center gap-2 text-sm font-black text-slate-600">
-            <ShoppingCart size={18} className="text-primary-600" />
-            <span>{totalItems} ítem(s) — {formatCurrency(totalCarrito)}</span>
-          </div>
-        )}
-      </header>
+    <div className="-mx-2 -my-4 flex min-h-[calc(100dvh-72px)] flex-col sm:-mx-6 lg:-mx-8 lg:h-[calc(100dvh-72px)]">
+
 
       {isLoading ? (
         <div className="flex min-h-[60vh] flex-col items-center justify-center">
@@ -301,11 +282,43 @@ export function SellClient() {
           <p className="mt-4 text-lg font-black text-slate-600">Cargando catálogo...</p>
         </div>
       ) : (
-        /* ── Split Screen ──────────────────────────────────────────────── */
-        <div className="flex h-[calc(100vh-65px)]">
+        <>
+          {/* Mobile Tabs */}
+          <div className="flex border-b border-slate-200 bg-white lg:hidden shrink-0">
+            <button
+              onClick={() => setActiveTab("catalogo")}
+              type="button"
+              className={`flex-1 py-3.5 text-center text-sm font-black transition-all border-b-2 ${
+                activeTab === "catalogo"
+                  ? "border-primary-600 text-primary-600"
+                  : "border-transparent text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              🛍️ Catálogo ({productos.length})
+            </button>
+            <button
+              onClick={() => setActiveTab("carrito")}
+              type="button"
+              className={`flex-1 py-3.5 text-center text-sm font-black transition-all border-b-2 flex items-center justify-center gap-1.5 ${
+                activeTab === "carrito"
+                  ? "border-primary-600 text-primary-600"
+                  : "border-transparent text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              🛒 Carrito
+              {totalItems > 0 && (
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary-600 text-[10px] font-black text-white">
+                  {totalItems}
+                </span>
+              )}
+            </button>
+          </div>
 
-          {/* ── LEFT: Catálogo (70%) ──────────────────────────────────── */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* ── Split Screen ──────────────────────────────────────────────── */}
+          <div className="flex flex-1 flex-col overflow-visible lg:flex-row lg:overflow-hidden">
+
+            {/* ── LEFT: Catálogo (70%) ──────────────────────────────────── */}
+            <div className={`flex-1 space-y-4 overflow-visible p-4 pb-28 lg:overflow-y-auto lg:pb-4 ${activeTab === "catalogo" ? "block" : "hidden"} lg:block`}>
 
             {/* Categorías */}
             <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
@@ -438,7 +451,7 @@ export function SellClient() {
           </div>
 
           {/* ── RIGHT: Ticket / Carrito (30%) ─────────────────────────── */}
-          <div className="w-80 shrink-0 border-l border-slate-200 bg-white flex flex-col shadow-xl">
+          <div className={`min-h-[calc(100dvh-130px)] w-full shrink-0 border-t border-slate-200 bg-white shadow-xl lg:flex lg:h-auto lg:min-h-0 lg:w-96 lg:flex-col lg:border-l lg:border-t-0 ${activeTab === "carrito" ? "flex flex-col" : "hidden"}`}>
             {/* Encabezado carrito */}
             <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
               <div className="flex items-center gap-2">
@@ -535,6 +548,26 @@ export function SellClient() {
             </div>
           </div>
         </div>
+
+        {/* Floating cart summary button for mobile */}
+        {activeTab === "catalogo" && totalItems > 0 && (
+          <div className="fixed bottom-4 left-4 right-4 z-30 lg:hidden animate-in fade-in slide-in-from-bottom-4 duration-200">
+            <button
+              onClick={() => setActiveTab("carrito")}
+              type="button"
+              className="flex w-full items-center justify-between rounded-2xl bg-slate-900 px-5 py-4 text-white shadow-xl shadow-slate-900/30 active:scale-95 transition"
+            >
+              <div className="flex items-center gap-2">
+                <ShoppingCart size={20} />
+                <span className="text-sm font-black">{totalItems} prod. en carrito</span>
+              </div>
+              <span className="text-base font-black">
+                Ver Carrito ({formatCurrency(totalCarrito)}) &rarr;
+              </span>
+            </button>
+          </div>
+        )}
+      </>
       )}
 
       {/* ═══════════════════════════════════════════════════════════════
@@ -542,11 +575,11 @@ export function SellClient() {
       ═══════════════════════════════════════════════════════════════ */}
       {showModal && (
         <div
-          className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4 p-0"
           onClick={cerrarModal}
         >
           <div
-            className="bg-white rounded-3xl shadow-2xl w-full max-w-md border border-slate-200 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200"
+            className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-md border border-slate-200 max-h-[96vh] sm:max-h-[92vh] overflow-y-auto animate-in fade-in slide-in-from-bottom sm:zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header modal */}
@@ -774,6 +807,6 @@ export function SellClient() {
           </div>
         </div>
       )}
-    </main>
+    </div>
   );
 }

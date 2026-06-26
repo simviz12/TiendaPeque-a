@@ -15,9 +15,9 @@ export function LogoutButton() {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
       toast.success("Sesion cerrada.");
-      // Usar window.location.href fuerza una recarga completa del navegador (Hard Reload)
-      // Esto destruye el caché de memoria de React/Next.js y evita por completo el error del botón "Atrás"
-      window.location.href = "/login";
+      // Usar window.location.replace fuerza una recarga completa del navegador
+      // Esto destruye el caché de memoria de React/Next.js y no añade a la historia
+      window.location.replace("/login");
     } catch {
       toast.error("No se pudo cerrar la sesion.");
     } finally {

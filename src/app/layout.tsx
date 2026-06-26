@@ -22,7 +22,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="flex min-h-full flex-col antialiased">
+      <body className="flex min-h-full w-full min-w-0 flex-col overflow-x-hidden antialiased">
         <Providers>{children}</Providers>
       </body>
     </html>

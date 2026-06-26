@@ -16,12 +16,12 @@ import {
 import { LogoutButton } from "@/presentation/components/logout-button";
 
 const navigation = [
-  { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, desc: "Resumen" },
+  { href: "/admin/dashboard", label: "Resumen", icon: LayoutDashboard, desc: "General" },
   { href: "/admin/inventario", label: "Inventario", icon: PackageSearch, desc: "Productos" },
-  { href: "/admin/ventas", label: "Ventas", icon: ClipboardList, desc: "Historial" },
+  { href: "/admin/ventas", label: "Ventas", icon: ClipboardList, desc: "Registro" },
   { href: "/admin/fiados", label: "Fiados", icon: BookUser, desc: "Créditos" },
   { href: "/admin/cierre-caja", label: "Caja", icon: Calculator, desc: "Cierre" },
-  { href: "/admin/logs", label: "Logs", icon: ScrollText, desc: "Sistema" },
+  { href: "/admin/logs", label: "Historial", icon: ScrollText, desc: "Sistema" },
 ];
 
 export default function AdminLayout({
@@ -32,16 +32,16 @@ export default function AdminLayout({
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50 md:flex-row">
+    <div className="flex min-h-screen w-full max-w-full flex-col overflow-x-hidden bg-slate-50 md:flex-row">
       
       {/* ===== HEADER MÓVIL (Solo visible en móviles) ===== */}
-      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 md:hidden shadow-sm">
-        <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-50 flex w-full min-w-0 items-center justify-between overflow-x-clip border-b border-slate-200 bg-white px-4 py-3 shadow-sm md:hidden">
+        <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 shadow-md">
             <ShoppingBag size={20} color="white" strokeWidth={2.5} />
           </div>
-          <div>
-            <h1 className="text-sm font-black leading-tight text-slate-900">Tienda Casera</h1>
+          <div className="min-w-0">
+            <h1 className="truncate text-sm font-black leading-tight text-slate-900">Tienda Casera</h1>
             <p className="text-[10px] font-bold uppercase tracking-widest text-primary-600">Admin</p>
           </div>
         </div>
@@ -123,7 +123,7 @@ export default function AdminLayout({
       </aside>
 
       {/* ===== MAIN CONTENT ===== */}
-      <main className="flex-1 min-w-0">
+      <main className="min-w-0 flex-1 overflow-x-hidden">
         {children}
       </main>
     </div>

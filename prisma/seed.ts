@@ -1,16 +1,7 @@
 import bcrypt from "bcryptjs";
-import { PrismaClient, RolUsuario, TipoCategoria } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient, RolUsuario, TipoCategoria, EstadoFiado } from "../src/generated/prisma/index.js";
 
-const connectionString = process.env.DATABASE_URL;
-
-if (!connectionString) {
-  throw new Error("DATABASE_URL is required to run the seed.");
-}
-
-const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString }),
-});
+const prisma = new PrismaClient();
 
 const categorias = [
   { nombre: "Licores", tipo: TipoCategoria.sensible },
@@ -18,27 +9,36 @@ const categorias = [
   { nombre: "Alimentos y dulces", tipo: TipoCategoria.normal },
   { nombre: "Huevos y lacteos", tipo: TipoCategoria.normal },
   { nombre: "Otros", tipo: TipoCategoria.normal },
-] as const;
+];
 
 const productos = [
-  { nombre: "Cerveza lata 330 ml", categoria: "Licores", precio: "3500", costo: "2600", stock: 48, esDePaquete: false },
-  { nombre: "Aguardiente media botella", categoria: "Licores", precio: "22000", costo: "17500", stock: 12, esDePaquete: false },
-  { nombre: "Ron botella 375 ml", categoria: "Licores", precio: "28000", costo: "21500", stock: 8, esDePaquete: false },
-  { nombre: "Cigarrillo unidad", categoria: "Cigarrillos", precio: "1000", costo: "700", stock: 120, esDePaquete: false },
-  { nombre: "Paquete cigarrillos", categoria: "Cigarrillos", precio: "18000", costo: "14500", stock: 20, esDePaquete: true },
-  { nombre: "Galletas de chocolate", categoria: "Alimentos y dulces", precio: "2500", costo: "1700", stock: 35, esDePaquete: false },
-  { nombre: "Chocolatina", categoria: "Alimentos y dulces", precio: "2000", costo: "1300", stock: 40, esDePaquete: false },
-  { nombre: "Papas paquete pequeno", categoria: "Alimentos y dulces", precio: "2800", costo: "1900", stock: 32, esDePaquete: false },
-  { nombre: "Pan tajado", categoria: "Alimentos y dulces", precio: "6500", costo: "5000", stock: 10, esDePaquete: false },
-  { nombre: "Huevos cubeta x30", categoria: "Huevos y lacteos", precio: "18000", costo: "14500", stock: 10, esDePaquete: true },
-  { nombre: "Huevo unidad", categoria: "Huevos y lacteos", precio: "700", costo: "480", stock: 90, esDePaquete: false },
-  { nombre: "Leche bolsa 1 litro", categoria: "Huevos y lacteos", precio: "4200", costo: "3400", stock: 24, esDePaquete: false },
-  { nombre: "Queso campesino 250 g", categoria: "Huevos y lacteos", precio: "8500", costo: "6700", stock: 9, esDePaquete: false },
-  { nombre: "Encendedor", categoria: "Otros", precio: "2500", costo: "1600", stock: 18, esDePaquete: false },
-  { nombre: "Bolsa basura pequena", categoria: "Otros", precio: "500", costo: "250", stock: 100, esDePaquete: false },
-] as const;
+  { nombre: "Cerveza lata 330 ml", categoria: "Licores", precio: 3500, costo: 2600, stock: 48, esDePaquete: false },
+  { nombre: "Aguardiente media botella", categoria: "Licores", precio: 22000, costo: 17500, stock: 12, esDePaquete: false },
+  { nombre: "Ron botella 375 ml", categoria: "Licores", precio: 28000, costo: 21500, stock: 8, esDePaquete: false },
+  { nombre: "Cigarrillo unidad", categoria: "Cigarrillos", precio: 1000, costo: 700, stock: 120, esDePaquete: false },
+  { nombre: "Paquete cigarrillos", categoria: "Cigarrillos", precio: 18000, costo: 14500, stock: 20, esDePaquete: true },
+  { nombre: "Galletas de chocolate", categoria: "Alimentos y dulces", precio: 2500, costo: 1700, stock: 35, esDePaquete: false },
+  { nombre: "Chocolatina", categoria: "Alimentos y dulces", precio: 2000, costo: 1300, stock: 40, esDePaquete: false },
+  { nombre: "Papas paquete pequeno", categoria: "Alimentos y dulces", precio: 2800, costo: 1900, stock: 32, esDePaquete: false },
+  { nombre: "Pan tajado", categoria: "Alimentos y dulces", precio: 6500, costo: 5000, stock: 10, esDePaquete: false },
+  { nombre: "Huevos cubeta x30", categoria: "Huevos y lacteos", precio: 18000, costo: 14500, stock: 10, esDePaquete: true },
+  { nombre: "Huevo unidad", categoria: "Huevos y lacteos", precio: 700, costo: 480, stock: 90, esDePaquete: false },
+  { nombre: "Leche bolsa 1 litro", categoria: "Huevos y lacteos", precio: 4200, costo: 3400, stock: 24, esDePaquete: false },
+  { nombre: "Queso campesino 250 g", categoria: "Huevos y lacteos", precio: 8500, costo: 6700, stock: 9, esDePaquete: false },
+  { nombre: "Encendedor", categoria: "Otros", precio: 2500, costo: 1600, stock: 18, esDePaquete: false },
+  { nombre: "Bolsa basura pequena", categoria: "Otros", precio: 500, costo: 250, stock: 100, esDePaquete: false },
+];
 
-// Pesos de venta realista por producto (probabilidad relativa)
+const clientesNombres = [
+  "Don Julio",
+  "Doña Clara",
+  "Carlos Mario",
+  "Vecina Luz",
+  "Juan K",
+  "María Camila",
+  "El Profe",
+];
+
 const PESOS_VENTA: Record<string, number> = {
   "Cerveza lata 330 ml": 18,
   "Aguardiente media botella": 6,
@@ -61,131 +61,282 @@ function randInt(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-// Selecciona un producto aleatoriamente según pesos
-function elegirProducto(pesosMap: Map<string, number>, productosIds: string[]) {
-  const totalPeso = Array.from(pesosMap.values()).reduce((a, b) => a + b, 0);
+function elegirProducto(productosGuardados: any[]) {
+  const totalPeso = productosGuardados.reduce((acc, p) => acc + (PESOS_VENTA[p.nombre] ?? 5), 0);
   let rnd = Math.random() * totalPeso;
-  for (const id of productosIds) {
-    const peso = pesosMap.get(id) ?? 1;
+  for (const p of productosGuardados) {
+    const peso = PESOS_VENTA[p.nombre] ?? 5;
     rnd -= peso;
-    if (rnd <= 0) return id;
+    if (rnd <= 0) return p;
   }
-  return productosIds[productosIds.length - 1];
+  return productosGuardados[productosGuardados.length - 1];
 }
 
 async function main() {
-  console.log("🌱 Iniciando seed...");
+  console.log("🌱 Iniciando inyección de datos simulados...");
 
-  const [adminPasswordHash, vendedorPasswordHash] = await Promise.all([
-    bcrypt.hash("Admin123*", 10),
-    bcrypt.hash("Vendedor123*", 10),
-  ]);
+  // Limpiar base de datos
+  console.log("🧹 Limpiando registros antiguos...");
+  await prisma.$executeRawUnsafe('TRUNCATE TABLE "cierres_caja", "logs_auditoria", "fiados", "ventas", "transacciones", "clientes", "productos", "categorias", "usuarios" CASCADE;');
 
-  const adminUser = await prisma.usuario.upsert({
-    where: { usuario: "admin" },
-    update: { nombre: "Administrador", passwordHash: adminPasswordHash, rol: RolUsuario.ADMIN },
-    create: { nombre: "Administrador", usuario: "admin", passwordHash: adminPasswordHash, rol: RolUsuario.ADMIN },
+  // 1. Crear Usuarios
+  console.log("👤 Creando usuarios...");
+  const adminPasswordHash = await bcrypt.hash("Admin123*", 10);
+  const vendedorPasswordHash = await bcrypt.hash("Vendedor123*", 10);
+
+  const adminUser = await prisma.usuario.create({
+    data: {
+      nombre: "Administrador",
+      usuario: "admin",
+      passwordHash: adminPasswordHash,
+      rol: RolUsuario.ADMIN,
+    },
   });
 
-  const vendedorUser = await prisma.usuario.upsert({
-    where: { usuario: "vendedor" },
-    update: { nombre: "Vendedor", passwordHash: vendedorPasswordHash, rol: RolUsuario.VENDEDOR },
-    create: { nombre: "Vendedor", usuario: "vendedor", passwordHash: vendedorPasswordHash, rol: RolUsuario.VENDEDOR },
+  const vendedorUser = await prisma.usuario.create({
+    data: {
+      nombre: "Vendedor",
+      usuario: "vendedor",
+      passwordHash: vendedorPasswordHash,
+      rol: RolUsuario.VENDEDOR,
+    },
   });
 
-  for (const categoria of categorias) {
-    await prisma.categoria.upsert({
-      where: { nombre: categoria.nombre },
-      update: { tipo: categoria.tipo },
-      create: categoria,
+  const usuarios = [adminUser, vendedorUser];
+
+  // 2. Crear Categorías
+  console.log("📂 Creando categorías...");
+  const categoriasGuardadas = [];
+  for (const cat of categorias) {
+    const c = await prisma.categoria.create({
+      data: cat,
     });
+    categoriasGuardadas.push(c);
   }
 
-  const categoriasGuardadas = await prisma.categoria.findMany();
-  const categoriaPorNombre = new Map(categoriasGuardadas.map((c) => [c.nombre, c.id]));
-
-  const productosGuardados: { id: string; nombre: string; precio: string }[] = [];
-
-  for (const producto of productos) {
-    const categoriaId = categoriaPorNombre.get(producto.categoria);
-    if (!categoriaId) throw new Error(`No se encontró la categoría ${producto.categoria}.`);
-
-    const p = await prisma.producto.upsert({
-      where: { nombre: producto.nombre },
-      update: { categoriaId, precio: producto.precio, costo: producto.costo, stock: producto.stock, esDePaquete: producto.esDePaquete },
-      create: { nombre: producto.nombre, categoriaId, precio: producto.precio, costo: producto.costo, stock: producto.stock, esDePaquete: producto.esDePaquete },
+  // 3. Crear Productos
+  console.log("📦 Creando productos...");
+  const productosGuardados = [];
+  for (const prod of productos) {
+    const cat = categoriasGuardadas.find((c) => c.nombre === prod.categoria)!;
+    const p = await prisma.producto.create({
+      data: {
+        nombre: prod.nombre,
+        categoriaId: cat.id,
+        precio: prod.precio,
+        costo: prod.costo,
+        stock: prod.stock,
+        esDePaquete: prod.esDePaquete,
+      },
     });
-    productosGuardados.push({ id: p.id, nombre: p.nombre, precio: p.precio.toString() });
+    productosGuardados.push(p);
   }
 
-  console.log("✅ Usuarios, categorías y productos creados.");
+  // 4. Crear Clientes
+  console.log("👥 Creando clientes para fiados...");
+  const clientesGuardados = [];
+  for (const nombre of clientesNombres) {
+    const c = await prisma.cliente.create({
+      data: {
+        nombre,
+        telefono: `31${randInt(0, 9)}${randInt(1000000, 9999999)}`,
+      },
+    });
+    clientesGuardados.push(c);
+  }
 
-  // --- GENERAR 60 DÍAS DE VENTAS SIMULADAS ---
-  console.log("📊 Generando 60 días de ventas simuladas...");
-
-  // Eliminar ventas previas del seed para no duplicar
-  await prisma.venta.deleteMany({});
-  await prisma.logAuditoria.deleteMany({});
-
-  const productosIds = productosGuardados.map((p) => p.id);
-  const pesosMap = new Map<string, number>(
-    productosGuardados.map((p) => [p.id, PESOS_VENTA[p.nombre] ?? 5])
-  );
-  const vendedores = [adminUser.id, vendedorUser.id];
-
+  // 5. Generar Transacciones y Ventas (Historial  // --- GENERAR 180 DÍAS DE VENTAS SIMULADAS ---
+  console.log("📊 Generando 180 días de ventas simuladas...");
   const hoy = new Date();
-  const ventasParaInsertar: {
-    productoId: string;
-    vendedorId: string;
-    cantidad: number;
-    total: string;
-    fecha: Date;
-  }[] = [];
 
-  for (let dia = 60; dia >= 0; dia--) {
+  for (let dia = 180; dia >= 0; dia--) {
     const fechaDia = new Date(hoy);
     fechaDia.setDate(hoy.getDate() - dia);
 
-    // Los fines de semana venden más (1.5x), entre semana normal
-    const esFinde = fechaDia.getDay() === 0 || fechaDia.getDay() === 6;
-    // Tendencia creciente: los últimos 30 días venden ~20% más que los primeros 30
-    const factorTendencia = dia > 30 ? 1.0 : 1.2;
-    const ventasPorDia = Math.round((esFinde ? randInt(18, 35) : randInt(10, 22)) * factorTendencia);
+    const esFinDeSemana = fechaDia.getDay() === 0 || fechaDia.getDay() === 6;
+    const factorVentas = esFinDeSemana ? 1.6 : 1.0;
+    const factorTendencia = dia > 90 ? 1.0 : 1.2;
+    const cantidadTransacciones = Math.round(randInt(10, 25) * factorVentas * factorTendencia);
 
-    for (let v = 0; v < ventasPorDia; v++) {
-      const productoId = elegirProducto(pesosMap, productosIds);
-      const producto = productosGuardados.find((p) => p.id === productoId)!;
-      const cantidad = randInt(1, 4);
-      const total = (parseFloat(producto.precio) * cantidad).toFixed(2);
-      const vendedorId = vendedores[Math.random() < 0.7 ? 1 : 0]; // 70% vendedor, 30% admin
+    // Totales diarios para Cierre de Caja
+    let diarioEfectivo = 0;
+    let diarioNequi = 0;
+    let diarioBancolombia = 0;
+    let diarioFiado = 0;
+    let diarioTotal = 0;
 
-      // Hora aleatoria del día (7am - 9pm)
+    for (let t = 0; t < cantidadTransacciones; t++) {
+      const vendedor = usuarios[Math.random() < 0.7 ? 1 : 0]; // 70% vendedor, 30% admin
+
+      // Determinar hora de la transacción
       const hora = randInt(7, 21);
       const minuto = randInt(0, 59);
-      const fecha = new Date(fechaDia);
-      fecha.setHours(hora, minuto, 0, 0);
+      const fechaTransaccion = new Date(fechaDia);
+      fechaTransaccion.setHours(hora, minuto, 0, 0);
 
-      ventasParaInsertar.push({ productoId, vendedorId, cantidad, total, fecha });
+      const cantItems = randInt(1, 5);
+      const itemsVendidos: { producto: any; cantidad: number; total: number }[] = [];
+      let totalTransaccion = 0;
+
+      for (let i = 0; i < cantItems; i++) {
+        const prod = elegirProducto(productosGuardados);
+        // Evitar duplicados del mismo producto en la misma transacción
+        if (itemsVendidos.some(item => item.producto.id === prod.id)) continue;
+
+        const cantidad = randInt(1, prod.esDePaquete ? 1 : 4);
+        const totalItem = Number(prod.precio) * cantidad;
+        totalTransaccion += totalItem;
+
+        itemsVendidos.push({
+          producto: prod,
+          cantidad,
+          total: totalItem,
+        });
+      }
+
+      // Distribución de formas de pago
+      let pagoEfectivo = 0;
+      let pagoNequi = 0;
+      let pagoBancolombia = 0;
+      let pagoFiado = 0;
+
+      const randomPago = Math.random();
+      if (randomPago < 0.6) {
+        // 60% solo efectivo
+        pagoEfectivo = totalTransaccion;
+      } else if (randomPago < 0.8) {
+        // 20% monederos virtuales
+        if (Math.random() < 0.5) {
+          pagoNequi = totalTransaccion;
+        } else {
+          pagoBancolombia = totalTransaccion;
+        }
+      } else if (randomPago < 0.95) {
+        // 15% fiado
+        pagoFiado = totalTransaccion;
+      } else {
+        // 5% mixto (Efectivo + Nequi/Bancolombia)
+        pagoEfectivo = Math.round(totalTransaccion * 0.5);
+        pagoNequi = totalTransaccion - pagoEfectivo;
+      }
+
+      // Crear transacción
+      const transaccion = await prisma.transaccion.create({
+        data: {
+          fecha: fechaTransaccion,
+          vendedorId: vendedor.id,
+          total: totalTransaccion,
+          pagoEfectivo,
+          pagoNequi,
+          pagoBancolombia,
+          pagoFiado,
+        },
+      });
+
+      // Crear ventas asociadas
+      for (const item of itemsVendidos) {
+        await prisma.venta.create({
+          data: {
+            productoId: item.producto.id,
+            transaccionId: transaccion.id,
+            cantidad: item.cantidad,
+            precioUnitario: item.producto.precio,
+            total: item.total,
+            fecha: fechaTransaccion,
+          },
+        });
+      }
+
+      // Si es fiado, crear el registro de Fiado
+      if (pagoFiado > 0) {
+        const cliente = clientesGuardados[randInt(0, clientesGuardados.length - 1)];
+        // Algunos fiados ya están pagados, otros pendientes
+        const estadoRandom = Math.random();
+        let estado: EstadoFiado = EstadoFiado.PENDIENTE;
+        let montoPagado = 0;
+
+        if (estadoRandom < 0.4) {
+          estado = EstadoFiado.PAGADO_TOTAL;
+          montoPagado = pagoFiado;
+        } else if (estadoRandom < 0.7) {
+          estado = EstadoFiado.PAGADO_PARCIAL;
+          montoPagado = Math.round(pagoFiado * 0.4);
+        }
+
+        await prisma.fiado.create({
+          data: {
+            clienteId: cliente.id,
+            transaccionId: transaccion.id,
+            montoTotal: pagoFiado,
+            montoPagado,
+            estado,
+            fechaCreacion: fechaTransaccion,
+            notas: estado === EstadoFiado.PENDIENTE ? "Pendiente de pago" : "Abono registrado",
+          },
+        });
+
+        diarioFiado += pagoFiado;
+      }
+
+      diarioEfectivo += pagoEfectivo;
+      diarioNequi += pagoNequi;
+      diarioBancolombia += pagoBancolombia;
+      diarioTotal += totalTransaccion;
+    }
+
+    // Crear cierre de caja al final del día
+    const fechaCierre = new Date(fechaDia);
+    fechaCierre.setHours(21, 30, 0, 0); // Cerrar a las 9:30 PM
+
+    await prisma.cierreCaja.create({
+      data: {
+        fecha: fechaCierre,
+        totalVentas: diarioTotal,
+        numeroTransacciones: cantidadTransacciones,
+        totalEfectivo: diarioEfectivo,
+        totalNequi: diarioNequi,
+        totalBancolombia: diarioBancolombia,
+        totalFiado: diarioFiado,
+        usuarioId: adminUser.id, // Administrador realiza el cierre
+      },
+    });
+
+    // Agregar logs de auditoría aleatorios por día
+    if (Math.random() < 0.4) {
+      const fechaLog = new Date(fechaDia);
+      fechaLog.setHours(randInt(8, 18), randInt(0, 59));
+      await prisma.logAuditoria.create({
+        data: {
+          usuarioId: adminUser.id,
+          accion: "Ajuste de inventario diario realizado.",
+          fecha: fechaLog,
+        },
+      });
     }
   }
 
-  // Insertar en lotes de 100 para eficiencia
-  const BATCH = 100;
-  for (let i = 0; i < ventasParaInsertar.length; i += BATCH) {
-    const lote = ventasParaInsertar.slice(i, i + BATCH);
-    await prisma.venta.createMany({ data: lote });
-  }
+  // 6. Crear algunos logs de auditoría generales recientes
+  console.log("📝 Creando logs de auditoría recientes...");
+  await prisma.logAuditoria.create({
+    data: {
+      usuarioId: adminUser.id,
+      accion: "Inicio de sesión del Administrador.",
+      fecha: new Date(),
+    },
+  });
 
-  console.log(`✅ ${ventasParaInsertar.length} ventas simuladas generadas para los últimos 60 días.`);
-  console.log("\n🎉 Seed completado exitosamente.");
+  console.log("✅ Ventas simuladas generadas para los últimos 180 días.");
+  console.log("👥 Credenciales creadas:");
   console.log("   Admin:    admin / Admin123*");
   console.log("   Vendedor: vendedor / Vendedor123*");
 }
 
 main()
-  .then(async () => { await prisma.$disconnect(); })
-  .catch(async (error) => {
-    console.error(error);
+  .then(async () => {
+    await prisma.$disconnect();
+  })
+  .catch(async (e) => {
+    console.error(e);
     await prisma.$disconnect();
     process.exit(1);
   });

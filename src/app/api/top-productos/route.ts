@@ -3,6 +3,8 @@ import { prisma } from '@/infrastructure/database/prisma';
 import { verifyJwtAndGetUser } from '@/infrastructure/auth/session';
 import { z } from 'zod';
 
+export const dynamic = 'force-dynamic';
+
 const querySchema = z.object({
   limit: z.string().optional(),
 });
@@ -20,10 +22,21 @@ export async function GET(request: Request) {
   }
   const limit = params.data.limit ? parseInt(params.data.limit) : 5;
 
-  // Calculate current month date range
-  const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), 1);
-  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  const startDateParam = url.searchParams.get('startDate');
+  const endDateParam = url.searchParams.get('endDate');
+
+  let start: Date;
+  let end: Date;
+
+  if (startDateParam && endDateParam) {
+    start = new Date(startDateParam);
+    end = new Date(endDateParam);
+  } else {
+    // Fallback: Calculate current month date range
+    const now = new Date();
+    start = new Date(now.getFullYear(), now.getMonth(), 1);
+    end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  }
 
   try {
     // 1. Group by product for top sold

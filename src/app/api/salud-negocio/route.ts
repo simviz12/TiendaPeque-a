@@ -2,41 +2,61 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/infrastructure/database/prisma';
 import { verifyJwtAndGetUser } from '@/infrastructure/auth/session';
 
-export async function GET() {
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: Request) {
   const user = await verifyJwtAndGetUser();
   if (!user || user.rol !== 'ADMIN') {
     return NextResponse.json({ message: 'No autorizado' }, { status: 403 });
   }
 
+  const url = new URL(request.url);
+  const startDateParam = url.searchParams.get('startDate');
+  const endDateParam = url.searchParams.get('endDate');
+
   try {
     const now = new Date();
+    let currentStart: Date, currentEnd: Date, prevStart: Date, prevEnd: Date;
+    let durationDays = 30; // Default para proyección
 
-    // Rangos de fechas: mes actual y mes anterior
-    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+    if (startDateParam && endDateParam) {
+      currentStart = new Date(startDateParam);
+      currentEnd = new Date(endDateParam);
+      const diffTime = Math.abs(currentEnd.getTime() - currentStart.getTime());
+      durationDays = diffTime / (1000 * 60 * 60 * 24) || 1;
+
+      prevEnd = new Date(currentStart.getTime() - 1);
+      prevStart = new Date(currentStart.getTime() - diffTime);
+    } else {
+      // Rangos de fechas: mes actual y mes anterior por defecto
+      currentStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      currentEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      prevStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      prevEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+      durationDays = now.getDate() || 1; // Para promedio diario
+    }
 
     // ── 1. DATOS EN PARALELO (1 roundtrip) ──────────────────────────────────
     const [currentAgg, prevAgg, allProducts, soldGroupCurrent] = await Promise.all([
-      // Ventas mes actual
+      // Ventas periodo actual
       prisma.venta.aggregate({
-        where: { fecha: { gte: currentMonthStart } },
+        where: { fecha: { gte: currentStart, lte: currentEnd } },
         _sum: { total: true },
         _count: { id: true },
       }),
-      // Ventas mes anterior
+      // Ventas periodo anterior
       prisma.venta.aggregate({
-        where: { fecha: { gte: prevMonthStart, lte: prevMonthEnd } },
+        where: { fecha: { gte: prevStart, lte: prevEnd } },
         _sum: { total: true },
       }),
       // Inventario completo para stock saludable
       prisma.producto.findMany({
         select: { id: true, stock: true, categoriaId: true },
       }),
-      // Productos vendidos este mes (para diversidad real)
+      // Productos vendidos este periodo (para diversidad real)
       prisma.venta.groupBy({
         by: ['productoId'],
-        where: { fecha: { gte: currentMonthStart } },
+        where: { fecha: { gte: currentStart, lte: currentEnd } },
       }),
     ]);
 
@@ -85,20 +105,24 @@ export async function GET() {
       : 0;
     const diversityContrib = Math.round(diversityScore * 0.20);
 
-    // ── 5. PROYECCIÓN VENTAS (20%) — velocidad diaria real del mes ───────────
-    const dayOfMonth = now.getDate();
-    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    const dailyAvg = dayOfMonth > 0 ? currentRevenue / dayOfMonth : 0;
-    const projectedMonthEnd = dailyAvg * daysInMonth;
+    // ── 5. PROYECCIÓN VENTAS (20%) — velocidad diaria real del periodo ────────
+    const dailyAvg = durationDays > 0 ? currentRevenue / durationDays : 0;
+    // Siempre proyectamos a un mes típico (30 días) para mantener la escala comparable
+    const projectedMonthEnd = dailyAvg * 30;
 
     let projectionScore: number;
     let proyeccionValor: number;
 
-    if (prevRevenue === 0 && projectedMonthEnd > 0) {
+    // Calculamos los ingresos previos normalizados a 30 días para comparar peras con peras
+    const prevDurationDays = Math.abs(prevEnd.getTime() - prevStart.getTime()) / (1000 * 60 * 60 * 24) || 30;
+    const prevDailyAvg = prevRevenue / prevDurationDays;
+    const prevNormalized = prevDailyAvg * 30;
+
+    if (prevNormalized === 0 && projectedMonthEnd > 0) {
       projectionScore = 90;
       proyeccionValor = Math.round(projectedMonthEnd);
-    } else if (prevRevenue > 0) {
-      const projGrowthPct = ((projectedMonthEnd - prevRevenue) / prevRevenue) * 100;
+    } else if (prevNormalized > 0) {
+      const projGrowthPct = ((projectedMonthEnd - prevNormalized) / prevNormalized) * 100;
       projectionScore = Math.min(100, Math.max(0, 50 + projGrowthPct / 2));
       proyeccionValor = Math.round(projectedMonthEnd);
     } else {

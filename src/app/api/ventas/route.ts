@@ -21,36 +21,79 @@ const transaccionSchema = z.object({
   notas:           z.string().optional(),
 });
 
+export const dynamic = 'force-dynamic';
+
 // ─── GET /api/ventas — devuelve Transacciones con sus ítems ────────────────
 export async function GET(request: Request) {
+  const user = await verifyJwtAndGetUser();
+
+  if (!user) {
+    return NextResponse.json(
+      { success: false, error: 'No autorizado. Por favor inicia sesión.' },
+      { status: 401 },
+    );
+  }
+
   const url = new URL(request.url);
-  const { vendedorId, from, to } = Object.fromEntries(url.searchParams.entries());
+  const params = Object.fromEntries(url.searchParams.entries());
+  const { vendedorId, from, to } = params;
+  const page = Math.max(1, parseInt(params.page ?? '1'));
+  const size = Math.max(1, Math.min(10000, parseInt(params.size ?? '30')));
+  const skip = (page - 1) * size;
 
   const where: Record<string, unknown> = {};
-  if (vendedorId) where.vendedorId = vendedorId;
+  if (user.rol === 'VENDEDOR') {
+    where.vendedorId = user.id;
+  } else if (vendedorId) {
+    where.vendedorId = vendedorId;
+  }
   if (from || to) {
     where.fecha = {} as Record<string, Date>;
     if (from) (where.fecha as Record<string, Date>).gte = new Date(from);
     if (to)   (where.fecha as Record<string, Date>).lte = new Date(to);
   }
 
-  const transacciones = await prisma.transaccion.findMany({
-    where,
-    orderBy: { fecha: 'desc' },
-    include: {
-      vendedor: { select: { id: true, nombre: true, usuario: true } },
-      ventas: {
-        include: {
-          producto: { include: { categoria: true } },
+  // Obtener totales y registros paginados en paralelo
+  const [aggregate, total, transacciones] = await Promise.all([
+    prisma.transaccion.aggregate({
+      where,
+      _sum: { total: true },
+      _count: { id: true },
+    }),
+    prisma.transaccion.count({ where }),
+    prisma.transaccion.findMany({
+      where,
+      orderBy: { fecha: 'desc' },
+      skip,
+      take: size,
+      include: {
+        vendedor: { select: { id: true, nombre: true, usuario: true } },
+        ventas: {
+          include: {
+            producto: { include: { categoria: true } },
+          },
+        },
+        fiado: {
+          include: { cliente: { select: { id: true, nombre: true } } },
         },
       },
-      fiado: {
-        include: { cliente: { select: { id: true, nombre: true } } },
-      },
+    }),
+  ]);
+
+  return NextResponse.json({
+    success: true,
+    data: transacciones,
+    meta: {
+      page,
+      size,
+      total,
+      totalPages: Math.ceil(total / size),
+    },
+    totales: {
+      totalRecaudado: Number(aggregate._sum?.total ?? 0),
+      totalTransacciones: aggregate._count?.id ?? 0,
     },
   });
-
-  return NextResponse.json({ success: true, data: transacciones });
 }
 
 // ─── POST /api/ventas — registra el carrito completo ──────────────────────

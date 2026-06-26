@@ -3,6 +3,8 @@ import { BookUser, Banknote, AlertTriangle } from "lucide-react";
 import { redirect } from "next/navigation";
 import { verifyJwtAndGetUser } from "@/infrastructure/auth/session";
 
+export const dynamic = "force-dynamic";
+
 function formatCurrency(value: number | string) {
   return new Intl.NumberFormat("es-CO", {
     style: "currency",
@@ -18,16 +20,26 @@ export default async function AdminFiadosPage() {
     redirect("/login");
   }
 
-  // Obtener todos los fiados para agrupar
-  const fiados = await prisma.fiado.findMany({
-    orderBy: { fechaCreacion: "desc" },
-    include: {
-      cliente: true
-    }
-  });
+  // Aggregate real de TODOS los fiados (sin límite de página)
+  const [aggTodos, aggPendientes, fiados] = await Promise.all([
+    prisma.fiado.aggregate({
+      _sum: { montoTotal: true, montoPagado: true },
+    }),
+    prisma.fiado.aggregate({
+      where: { estado: { in: ["PENDIENTE", "PAGADO_PARCIAL"] } },
+      _sum: { montoTotal: true, montoPagado: true },
+    }),
+    prisma.fiado.findMany({
+      orderBy: { fechaCreacion: "desc" },
+      take: 200,
+      include: { cliente: true },
+    }),
+  ]);
 
-  let totalDeudaEnLaCalle = 0;
-  let totalRecaudado = 0;
+  const totalDeudaEnLaCalle =
+    Number(aggPendientes._sum?.montoTotal ?? 0) -
+    Number(aggPendientes._sum?.montoPagado ?? 0);
+  const totalRecaudado = Number(aggTodos._sum?.montoPagado ?? 0);
 
   // Agrupar por cliente
   const perfiles = new Map<string, {
@@ -43,9 +55,6 @@ export default async function AdminFiadosPage() {
     const montoTotal = Number(fiado.montoTotal);
     const montoPagado = Number(fiado.montoPagado);
     const deudaPendiente = montoTotal - montoPagado;
-
-    totalDeudaEnLaCalle += deudaPendiente;
-    totalRecaudado += montoPagado;
 
     const clienteId = fiado.clienteId;
     if (!perfiles.has(clienteId)) {
