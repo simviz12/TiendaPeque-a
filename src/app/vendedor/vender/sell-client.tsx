@@ -48,6 +48,7 @@ export function SellClient() {
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Carrito
   const [carrito, setCarrito] = useState<ItemCarrito[]>([]);
@@ -105,8 +106,13 @@ export function SellClient() {
   }, [categorias, selectedCategoryId]);
 
   const filteredProducts = useMemo(
-    () => productos.filter((p) => p.categoriaId === selectedCategoryId),
-    [productos, selectedCategoryId],
+    () =>
+      productos.filter(
+        (p) =>
+          p.categoriaId === selectedCategoryId &&
+          p.nombre.toLowerCase().includes(searchTerm.toLowerCase()),
+      ),
+    [productos, selectedCategoryId, searchTerm],
   );
 
   // ─── Totales del carrito ──────────────────────────────────────────────
@@ -355,6 +361,15 @@ export function SellClient() {
                 <h2 className="text-base font-black text-slate-900">
                   Productos — toca para agregar al carrito
                 </h2>
+              </div>
+              <div className="mt-2 mb-4">
+                <input
+                  type="text"
+                  placeholder="Buscar producto..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full rounded border border-slate-300 p-2 text-sm focus:border-primary-600 focus:outline-none"
+                />
               </div>
 
               {filteredProducts.length === 0 ? (
